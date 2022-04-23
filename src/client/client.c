@@ -1,9 +1,5 @@
-// Client side implementation of UDP client-server model
-
 
 #include "main_func.h"
-
-
 
 int main(int argc, char *argv[]) {
 
@@ -25,7 +21,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("File: %s\n",argv[2]);
-    printf("Dest: %s:%d\n",argv[1],PORT);
+    printf("Dest: %s:%d\n",argv[1],PORT_SERVER);
     printf("----------------------\n");
 
     struct sockaddr_in server_address, client_address;
@@ -35,17 +31,25 @@ int main(int argc, char *argv[]) {
 
     struct timeval stop, start;
 
+    // set client port
+    client_address.sin_port = htons(PORT_CLIENT);
+    bind(socket_descriptor,(struct sockaddr *)&client_address,sizeof(client_address));
+
     // fill server information
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(PORT);
+    server_address.sin_port = htons(PORT_SERVER);
     server_address.sin_addr.s_addr = inet_addr(argv[1]);
 
 
+
+
     //    HANDSHAKE
+    printf("\nHANDSHAKE >>>>>>>>>>>>>>>>\n");
     long n_o_char = init_handshake(socket_descriptor, server_address, len, argv[2]);
 
 
     //    FILE-TRANSFER
+    printf("\nFILE-TRANSFER >>>>>>>>>>>>>>>>\n");
     gettimeofday(&start, NULL);
     send_file(argv[2], n_o_char, socket_descriptor, server_address, len);
     gettimeofday(&stop, NULL);
@@ -56,6 +60,7 @@ int main(int argc, char *argv[]) {
 
 
     //    TERMINATION
+    printf("\nTERMINATION >>>>>>>>>>>>>>>>\n");
     termination_f(argv[2], socket_descriptor, server_address, len);
 
 

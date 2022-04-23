@@ -1,9 +1,5 @@
 
-
-
 #include "main_func.h"
-
-
 
 int main(int argc, char *argv[]) {
 
@@ -31,7 +27,7 @@ int main(int argc, char *argv[]) {
     // fill server information
     server_address.sin_family    = AF_INET; // IPv4
     server_address.sin_addr.s_addr = INADDR_ANY;
-    server_address.sin_port = htons(PORT);
+    server_address.sin_port = htons(PORT_SERVER);
 
     // bind socket with server address
     if ( bind(socket_descriptor, (const struct sockaddr *)&server_address,sizeof(server_address)) < 0 ) { exit(100); }
@@ -39,16 +35,19 @@ int main(int argc, char *argv[]) {
 
 
     //    HANDSHAKE
+    printf("\nHANDSHAKE >>>>>>>>>>>>>>>>\n");
     long message_length = init_handshake(socket_descriptor, client_address, len);
 
 
 
     //    FILE-TRANSFER
+    printf("\nFILE-TRANSFER >>>>>>>>>>>>>>>>\n");
     receive_message(file_dest, socket_descriptor, client_address, len, message_length);
 
 
 
     //     TERMINATION
+    printf("\nTERMINATION >>>>>>>>>>>>>>>>\n");
     _Bool op_exit = termination_f(file_dest, socket_descriptor, client_address, len);
 
 

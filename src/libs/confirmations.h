@@ -9,7 +9,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define PORT     32222
+#define PORT_SERVER     32222
+#define PORT_CLIENT     22223
 #define BUFFER_SIZE 1024
 #define SUB_BUFFER_SIZE 40
 #define TIMEOUT_S 1
