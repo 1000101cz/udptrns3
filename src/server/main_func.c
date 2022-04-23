@@ -69,14 +69,14 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
         if (hash[i] != buffer[i]) {
             fprintf(stderr, "ERROR: Hashes did not match!\n"); // send Error if they differ
             fucked = 1;
-            send_error_message(socket_descriptor, client_address);
+            send_fail(socket_descriptor, client_address);
             break;
         }
     }
 
     if (!fucked) {
         printf("\nSuccess\n");
-        send_success_message(socket_descriptor, client_address); // send Success if they match
+        send_success(socket_descriptor, client_address); // send Success if they match
     } else {
         fprintf(stderr,"ERROR: Transfer failed!\n");
     }

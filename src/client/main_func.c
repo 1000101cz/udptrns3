@@ -39,7 +39,7 @@ void termination_f(char *file_address, int socket_descriptor, struct sockaddr_in
     sendto(socket_descriptor, str, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address)); // send file hash to server
 
     // wait for SHA256 hash confirmation
-    if (get_last_confirmation(socket_descriptor, server_address, len)) {
+    if (get_last_conf(socket_descriptor, server_address, len)) {
         printf("\nSuccess\n");
         close(socket_descriptor);
     } else {

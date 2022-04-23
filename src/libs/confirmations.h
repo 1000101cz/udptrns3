@@ -34,39 +34,27 @@ void send_success(int socket_descriptor, struct sockaddr_in client_address);
 void send_fail(int socket_descriptor, struct sockaddr_in client_address);
 
 // get_conf
-//   * receive short confirmation message
+//   - receive short confirmation message
 _Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len);
 
-// send_error_message
-//   * send Error message to client (buffer filled with 0)
-void send_error_message(int socket_descriptor, struct sockaddr_in client_address);
-
-// send_success_message
-//   * send Success message to client (buffer filled with 1)
-void send_success_message(int socket_descriptor, struct sockaddr_in client_address);
-
 // confirmation_request
-//   * request confirmation after MAX_PACKETS_AT_ONCE packets were sent
+//   - request confirmation after MAX_PACKETS_AT_ONCE packets were sent
 void confirmation_request(int socket_descriptor, struct sockaddr_in server_address);
 
 // packet_is_requested
-//   * check if received packet is confirmation request
-_Bool packet_is_request(unsigned char *buffer);
+//   - check if received packet is confirmation request
+_Bool packet_is_request(const unsigned char *buffer);
 
 // everything_received_mes
-//   * send message to client that all packets were received
+//   - send message to client that all packets were received
 void everything_received_mes(int socket_descriptor, struct sockaddr_in client_address);
 
 // everything_received_rec
-//   * check if received message is everything_received - client app
-_Bool everything_received_rec(unsigned char *buffer);
-
-// get_confirmation
-//   * receive confirmation that operation succeeded
-_Bool get_confirmation(int socket_descriptor, struct sockaddr_in server_address, int len);
+//   - check if received message is everything_received - client app
+_Bool everything_received_rec(const unsigned char *buffer);
 
 // get_last_confirmation
-//   * receive last confirmation that operation succeeded - no timeout
-_Bool get_last_confirmation(int socket_descriptor, struct sockaddr_in server_address, int len);
+//   - receive last confirmation that operation succeeded - no timeout
+_Bool get_last_conf(int socket_descriptor, struct sockaddr_in server_address, int len);
 
 #endif

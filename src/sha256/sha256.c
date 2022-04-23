@@ -24,7 +24,7 @@ const static uint32_t k[64] = {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-#define rotate_r(val, bits) (val >> bits | val << (32 - bits))
+#define rotate_r(val, bits) ((val) >> (bits) | (val) << (32 - (bits)))
 
 static void sha256_calc_chunk(struct sha256_buff* buff, const uint8_t* chunk) {
     uint32_t w[64];
@@ -71,7 +71,7 @@ static void sha256_calc_chunk(struct sha256_buff* buff, const uint8_t* chunk) {
 void sha256_update(struct sha256_buff* buff, const void* data, size_t size) {
     const uint8_t* ptr = (const uint8_t*)data;
     buff->data_size += size;
-    /* If there is data left in buff, concatenate it to process as new chunk */
+    // If there is data left in buff, concatenate it to process as new chunk
     if (size + buff->chunk_size >= 64) {
         uint8_t tmp_chunk[64];
         memcpy(tmp_chunk, buff->last_chunk, buff->chunk_size);
@@ -81,14 +81,14 @@ void sha256_update(struct sha256_buff* buff, const void* data, size_t size) {
         buff->chunk_size = 0;
         sha256_calc_chunk(buff, tmp_chunk);
     }
-    /* Run over data chunks */
+    // Run over data chunks
     while (size  >= 64) {
         sha256_calc_chunk(buff, ptr);
         ptr += 64;
         size -= 64;
     }
 
-    /* Save remaining data in buff, will be reused on next call or finalize */
+    // Save remaining data in buff, will be reused on next call or finalize
     memcpy(buff->last_chunk + buff->chunk_size, ptr, size);
     buff->chunk_size += size;
 }
@@ -98,13 +98,13 @@ void sha256_finalize(struct sha256_buff* buff) {
     buff->chunk_size++;
     memset(buff->last_chunk + buff->chunk_size, 0, 64 - buff->chunk_size);
 
-    /* If there isn't enough space to fit int64, pad chunk with zeroes and prepare next chunk */
+    // if there isn't enough space to fit int64, pad chunk with zeroes and prepare next chunk
     if (buff->chunk_size > 56) {
         sha256_calc_chunk(buff, buff->last_chunk);
         memset(buff->last_chunk, 0, 64);
     }
 
-    /* Add total size as big-endian int64 x8 */
+    // add total size as big-endian int64 x8
     uint64_t size = buff->data_size * 8;
     int i;
     for (i = 8; i > 0; --i) {
@@ -125,10 +125,10 @@ void sha256_read(const struct sha256_buff* buff, uint8_t* hash) {
     }
 }
 
-static void bin_to_hex(const void* data, uint32_t len, char* out) {
+static void bin_to_hex(const void* data, char* out) {
     static const char* const lut = "0123456789abcdef";
     uint32_t i;
-    for (i = 0; i < len; i++){
+    for (i = 0; i < 32; i++){
         uint8_t c = ((uint8_t*)data)[i];
         out[i*2] = lut[c >> 4];
         out[i*2 + 1] = lut[c & 15];
@@ -138,21 +138,7 @@ static void bin_to_hex(const void* data, uint32_t len, char* out) {
 void sha256_read_hex(const struct sha256_buff* buff, char* hex) {
     uint8_t hash[32];
     sha256_read(buff, hash);
-    bin_to_hex(hash, 32, hex);
-}
-
-void sha256_easy_hash(const void* data, size_t size, uint8_t* hash) {
-    struct sha256_buff buff;
-    sha256_init(&buff);
-    sha256_update(&buff, data, size);
-    sha256_finalize(&buff);
-    sha256_read(&buff, hash);
-}
-
-void sha256_easy_hash_hex(const void* data, size_t size, char* hex) {
-    uint8_t hash[32];
-    sha256_easy_hash(data, size, hash);
-    bin_to_hex(hash, 32, hex);
+    bin_to_hex(hash, hex);
 }
 
 void *hash_file(char *file_address, char hash[65]){
