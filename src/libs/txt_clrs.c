@@ -3,6 +3,9 @@
 void print_text(const char *string, int color, _Bool bold) {
     if (bold) {
         switch (color) {
+            default:
+                break;
+
             // default
             case 0:
                 printf("\033[1m");
@@ -34,6 +37,9 @@ void print_text(const char *string, int color, _Bool bold) {
         }
     } else{
         switch (color) {
+            default:
+                break;
+
             // default
             case 0:
                 printf("%s",string);
