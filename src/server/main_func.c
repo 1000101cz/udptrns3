@@ -6,8 +6,10 @@
 long init_handshake(int socket_descriptor, struct sockaddr_in client_address, int len) {
     unsigned char init_buffer[25] = {'\0'};
     unsigned char sub_init_buffer[12] = {'\0'};
+    char *ptr;
     int buf_2_position;
-    long init_crc, computed_init_crc, message_length;
+    long init_crc, message_length;
+    unsigned long computed_init_crc;
     printf("  - receiving handshake message\n");
     while (1) {
         recvfrom(socket_descriptor, init_buffer, sizeof(unsigned char) * 25, MSG_WAITALL,(struct sockaddr *) &client_address, (unsigned int *) &len);
@@ -16,7 +18,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
             if (init_buffer[i] != ' ') {
                 sub_init_buffer[i] = init_buffer[i];
             } else {
-                message_length = atol(sub_init_buffer);
+                message_length = strtol((const char *)sub_init_buffer,&ptr,10);
                 computed_init_crc = compute_CRC_buffer(&sub_init_buffer, 12);
                 for (int j = i + 1; j < 25; j++) {
                     if (init_buffer[j] != '\0') {
@@ -24,7 +26,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
                         buf_2_position++;
                     } else {
                         sub_init_buffer[buf_2_position] = '\0';
-                        init_crc = atol(sub_init_buffer);
+                        init_crc = strtol((const char *)sub_init_buffer,&ptr,10);
                         break;
                     }
                 }
@@ -80,10 +82,10 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
     }
 
     if (!fucked) {
-        printf("  - hashes are identical\n");
+        print_text("  - hashes are identical\n",GREEN,0);
         send_success(socket_descriptor, client_address); // send Success if they match
     } else {
-        printf("  - hashed do not match!\n");
+        print_text("  - hashes do not match!\n",RED,0);
     }
     return fucked;
 }

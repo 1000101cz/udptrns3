@@ -24,12 +24,12 @@ long init_handshake(int socket_descriptor, struct sockaddr_in server_address, in
             break; // repeat if Success confirmation not received from server
         }
         if (try_number >= MAX_SENT_REPEAT) {
-            fprintf(stderr,"Handshake failed, cannot connect to server.\nTerminating..\n");
+            print_text("Handshake failed, cannot connect to server.\nTerminating..\n",RED,0);
             exit(100);
         }
         try_number++;
     }
-    printf("  - handshake message successfully received by server\n");
+    print_text("  - handshake message successfully received by server\n",GREEN,0);
     return n_o_char;
 }
 
@@ -47,11 +47,11 @@ _Bool termination_f(char *file_address, int socket_descriptor, struct sockaddr_i
 
     // wait for SHA256 hash confirmation
     if (get_conf(socket_descriptor, server_address, len, 1)) {
-        printf("  - received success from server\n");
+        print_text("  - received success from server\n",GREEN,0);
         close(socket_descriptor);
         return 0;
     } else {
-        printf("  - received fail from server!\n");
+        print_text("  - received fail from server!\n",RED,0);
         close(socket_descriptor);
         return 1;
     }
