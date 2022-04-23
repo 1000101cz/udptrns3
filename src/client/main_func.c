@@ -16,7 +16,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in server_address, in
     int try_number = 0;
     while (1) {
         sendto(socket_descriptor, init_msg, sizeof(unsigned char)*25,MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address));
-        if (get_conf(socket_descriptor, server_address, len)) {
+        if (get_conf(socket_descriptor, server_address, len, 0)) {
             break; // repeat if Success confirmation not received from server
         }
         if (try_number >= MAX_SENT_REPEAT) {
@@ -39,7 +39,7 @@ void termination_f(char *file_address, int socket_descriptor, struct sockaddr_in
     sendto(socket_descriptor, str, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address)); // send file hash to server
 
     // wait for SHA256 hash confirmation
-    if (get_last_conf(socket_descriptor, server_address, len)) {
+    if (get_conf(socket_descriptor, server_address, len, 1)) {
         printf("\nSuccess\n");
         close(socket_descriptor);
     } else {

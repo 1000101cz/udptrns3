@@ -35,7 +35,7 @@ void send_fail(int socket_descriptor, struct sockaddr_in client_address);
 
 // get_conf
 //   - receive short confirmation message
-_Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len);
+_Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len, _Bool last_confirmation);
 
 // confirmation_request
 //   - request confirmation after MAX_PACKETS_AT_ONCE packets were sent
@@ -52,9 +52,5 @@ void everything_received_mes(int socket_descriptor, struct sockaddr_in client_ad
 // everything_received_rec
 //   - check if received message is everything_received - client app
 _Bool everything_received_rec(const unsigned char *buffer);
-
-// get_last_confirmation
-//   - receive last confirmation that operation succeeded - no timeout
-_Bool get_last_conf(int socket_descriptor, struct sockaddr_in server_address, int len);
 
 #endif

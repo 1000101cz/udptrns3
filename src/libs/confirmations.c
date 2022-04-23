@@ -13,13 +13,17 @@ void send_fail(int socket_descriptor, struct sockaddr_in client_address) {
 }
 
 // receive confirmation that operation succeeded
-_Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len) {
+_Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len, _Bool last_confirmation) {
     unsigned char str[5] = {'\0'};
 
     // Set socket timeout
     struct timeval tv;
     tv.tv_sec = TIMEOUT_S;
     tv.tv_usec =  TIMEOUT_MS * 1000;
+    if (last_confirmation) {
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
+    }
     setsockopt(socket_descriptor, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
 
     recvfrom(socket_descriptor, str, sizeof(unsigned char)*5,MSG_WAITALL, ( struct sockaddr *) &server_address,(unsigned int*)&len);
@@ -32,10 +36,8 @@ _Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len
         }
     }
     if (!success) {
-        printf(">received fail\n");
         return 0;
     } else {
-        printf(">received success\n");
         return 1;
     }
 }
@@ -93,32 +95,4 @@ _Bool everything_received_rec(const unsigned char *buffer) {
         }
     }
     return 1;
-}
-
-// receive last confirmation that operation succeeded
-_Bool get_last_conf(int socket_descriptor, struct sockaddr_in server_address, int len) {
-    unsigned char str[5] = {'\0'};
-
-    // Set socket timeout
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-    setsockopt(socket_descriptor, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
-
-    recvfrom(socket_descriptor, str, sizeof(unsigned char)*5,MSG_WAITALL, ( struct sockaddr *) &server_address,(unsigned int*)&len);
-    _Bool success = 1;
-
-    for (int i = 0; i < 5; i++) {
-        if (str[i] != '1') {
-            success = 0;
-            break;
-        }
-    }
-    if (!success) {
-        printf(">received fail\n");
-        return 0;
-    } else {
-        printf(">received success\n");
-        return 1;
-    }
 }

@@ -21,73 +21,72 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
     FILE *read_file = fopen(file_dest,"rb");
 
     while(sending_file) {
-            // create mega_buffer with all packets prepared to send at once
-            for (int packet_n = 0; packet_n < MAX_PACKETS_AT_TIME; packet_n++) {
-                // clear buffer
-                for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) { data_buffer[i] = '\0'; }
+        // create mega_buffer with all packets prepared to send at once
+        for (int packet_n = 0; packet_n < MAX_PACKETS_AT_TIME; packet_n++) {
+            // clear buffer
+            for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) { data_buffer[i] = '\0'; }
 
-                // fill buffer
-                for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE && pointer < n_o_char; i++) {
-                    data_buffer[i] = getc(read_file);
-                    pointer++;
-                }
-
-                // create CRC and packet number sub_buffer
-                CRC_value = compute_CRC_buffer(&data_buffer, BUFFER_SIZE - SUB_BUFFER_SIZE);// compute CRC
-                sprintf((char *) sub_buffer, "%d %ld", number_of_packets, CRC_value);
-
-                // connect buffers (data + CRC)
-                for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) {
-                    packet_buffer[i] = data_buffer[i];
-                }
-                for (int i = BUFFER_SIZE - SUB_BUFFER_SIZE; i < BUFFER_SIZE; i++) {
-                    packet_buffer[i] = sub_buffer[i - (BUFFER_SIZE - SUB_BUFFER_SIZE)];
-                }
-
-                for (int i = 0; i < BUFFER_SIZE; i++) {
-                    mega_buffer[packet_n * BUFFER_SIZE + i] = packet_buffer[i];
-                }
-                if (number_of_packets >= packets_at_total) {
-                    last_packet_sent = 1;
-                    break;
-                }
-                number_of_packets++;
+            // fill buffer
+            for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE && pointer < n_o_char; i++) {
+                data_buffer[i] = getc(read_file);
+                pointer++;
             }
 
-            // send all data in mega_packet
-            for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
-                for (int j = 0; j < BUFFER_SIZE; j++) {
-                    packet_buffer[j] = mega_buffer[j + i*BUFFER_SIZE];
-                }
-                // send buffer with data, CRC and packet number
-                sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address));
-                if (last_packet_sent && (i+1)==packets_at_total%MAX_PACKETS_AT_TIME) {
-                    break;
-                }
+            // create CRC and packet number sub_buffer
+            CRC_value = compute_CRC_buffer(&data_buffer, BUFFER_SIZE - SUB_BUFFER_SIZE);// compute CRC
+            sprintf((char *) sub_buffer, "%d %ld", number_of_packets, CRC_value);
+
+            // connect buffers (data + CRC)
+            for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) {
+                packet_buffer[i] = data_buffer[i];
+            }
+            for (int i = BUFFER_SIZE - SUB_BUFFER_SIZE; i < BUFFER_SIZE; i++) {
+                packet_buffer[i] = sub_buffer[i - (BUFFER_SIZE - SUB_BUFFER_SIZE)];
             }
 
-            // send confirmation request
-            confirmation_request(socket_descriptor,server_address);
-
-            // receive confirmation or got_ales
-            recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &server_address,(unsigned int*)&len);
-            if (everything_received_rec(packet_buffer)) {
+            for (int i = 0; i < BUFFER_SIZE; i++) {
+                mega_buffer[packet_n * BUFFER_SIZE + i] = packet_buffer[i];
+            }
+            if (number_of_packets >= packets_at_total) {
+                last_packet_sent = 1;
                 break;
             }
-            for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
-                if (packet_buffer[i] == '0') {
-                    while (1) { // send corrupted packets again
-                        for (int j = 0; j < BUFFER_SIZE; j++) {
-                            packet_buffer[j] = mega_buffer[j + BUFFER_SIZE * i];
-                        }
-                        sendto(socket_descriptor, packet_buffer, sizeof(unsigned char) * (BUFFER_SIZE), MSG_CONFIRM,
-                               (const struct sockaddr *) &server_address, sizeof(server_address));
-                        if (get_conf(socket_descriptor, server_address, len)) {
-                            break;
-                        }
+            number_of_packets++;
+        }
+
+        // send all data in mega_packet
+        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
+            for (int j = 0; j < BUFFER_SIZE; j++) {
+                packet_buffer[j] = mega_buffer[j + i*BUFFER_SIZE];
+            }
+            // send buffer with data, CRC and packet number
+            sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address));
+            if (last_packet_sent && (i+1)==packets_at_total%MAX_PACKETS_AT_TIME) {
+                break;
+            }
+        }
+
+        // send confirmation request
+        confirmation_request(socket_descriptor,server_address);
+
+        // receive confirmation or got_ales
+        recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &server_address,(unsigned int*)&len);
+        if (everything_received_rec(packet_buffer)) {
+            break;
+        }
+        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
+            if (packet_buffer[i] == '0') {
+                while (1) { // send corrupted packets again
+                    for (int j = 0; j < BUFFER_SIZE; j++) {
+                        packet_buffer[j] = mega_buffer[j + BUFFER_SIZE * i];
+                    }
+                    sendto(socket_descriptor, packet_buffer, sizeof(unsigned char) * (BUFFER_SIZE), MSG_CONFIRM,(const struct sockaddr *) &server_address, sizeof(server_address));
+                    if (get_conf(socket_descriptor, server_address, len, 0)) {
+                        break;
                     }
                 }
             }
+        }
     }
 
     printf("Data packets sent: %d \n",number_of_packets);
@@ -132,7 +131,6 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
     unsigned char mega_buffer[(BUFFER_SIZE - SUB_BUFFER_SIZE)*MAX_PACKETS_AT_TIME];
 
     _Bool received_packets[MAX_PACKETS_AT_TIME];
-    _Bool receiving_file = 1;
 
     long counter = 0;
     long packet_counter = 0;
@@ -145,116 +143,106 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
     FILE *new_file;
     new_file = fopen(file_dest,"wb");
 
-    while (receiving_file) {
-        while (1) {
-            for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) { received_packets[i] = 1; }
+    while (1) {
+        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) { received_packets[i] = 1; }
 
-            // receive MAX_PACKETS_AT_TIME packets
-            for (int i = 0; i < MAX_PACKETS_AT_TIME + 1; i++) {
-                // receive packet with data number and CRC
-                recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
-                if (packet_is_request(packet_buffer)) {
-                    break;
-                }
-                packet_counter++;
+        // receive MAX_PACKETS_AT_TIME packets
+        for (int i = 0; i < MAX_PACKETS_AT_TIME + 1; i++) {
+            // receive packet with data number and CRC
+            recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
+            if (packet_is_request(packet_buffer)) {
+                break;
+            }
+            packet_counter++;
 
-                // separate number
-                packet_number = separate_number(packet_buffer);
+            // separate number
+            packet_number = separate_number(packet_buffer);
 
-                // separate CRC
-                crc_received = separate_crc(packet_buffer);
+            // separate CRC
+            crc_received = separate_crc(packet_buffer);
 
-                // separate data
+            // separate data
+            for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) {
+                data_buffer[j] = packet_buffer[j];
+            }
+
+            // compute CRC
+            crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
+
+            // check CRC and file number
+            if (crc_computed == crc_received) {
+                received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
                 for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) {
-                    data_buffer[j] = packet_buffer[j];
+                    mega_buffer[((packet_number-1)%MAX_PACKETS_AT_TIME)*(BUFFER_SIZE-SUB_BUFFER_SIZE) + j] = data_buffer[j];
                 }
-
-                // compute CRC
-                crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
-
-                // check CRC and file number
-                if (crc_computed == crc_received) {
-                    received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
-                    for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) {
-                        mega_buffer[((packet_number-1)%MAX_PACKETS_AT_TIME)*(BUFFER_SIZE-SUB_BUFFER_SIZE) + j] = data_buffer[j];
-                    }
-                    //break;
-                } else {
-                    received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 0;
-                }
+                //break;
+            } else {
+                received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 0;
             }
+        }
 
-            // send everything_received or confirmation
-            for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
-                if (received_packets[i]) {
-                    packet_buffer[i] = '1';
-                } else {
-                    packet_buffer[i] = '0';
-                }
+        // send everything_received or confirmation
+        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
+            if (received_packets[i]) {
+                packet_buffer[i] = '1';
+            } else {
+                packet_buffer[i] = '0';
             }
-            if (packet_number == packets_at_total) {
-                for (int i = (int)packets_at_total % MAX_PACKETS_AT_TIME; i < MAX_PACKETS_AT_TIME; i++) {
-                    packet_buffer[i] = '1';
-                }
+        }
+        if (packet_number == packets_at_total) {
+            for (int i = (int)packets_at_total % MAX_PACKETS_AT_TIME; i < MAX_PACKETS_AT_TIME; i++) {
+                packet_buffer[i] = '1';
             }
+        }
 
-            _Bool everything_ok = 1;
+        _Bool everything_ok = 1;
+        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
+            if (packet_buffer[i] == '0') {
+                everything_ok = 0;
+            }
+        }
+
+        if (!everything_ok) {
+            sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
             for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
                 if (packet_buffer[i] == '0') {
-                    everything_ok = 0;
-                }
-            }
+                    while (1) {
+                        recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
+                        packet_number = separate_number(packet_buffer); // separate number
+                        crc_received = separate_crc(packet_buffer); // separate CRC
+                        // separate data
+                        for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) { data_buffer[j] = packet_buffer[j]; }
 
-            if (!everything_ok) {
-                sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
-                for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
-                    if (packet_buffer[i] == '0') {
-                        while (1) {
-                            recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
-                            packet_number = separate_number(packet_buffer); // separate number
-                            crc_received = separate_crc(packet_buffer); // separate CRC
+                        crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
 
-                            // separate data
-                            for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) { data_buffer[j] = packet_buffer[j]; }
-
-                            crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
-
-                            if (crc_received == crc_computed) {
-                                received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
-                                send_success(socket_descriptor, client_address);
-                                break;
-                            } else {
-                                send_fail(socket_descriptor, client_address);
-                            }
+                        if (crc_received == crc_computed) {
+                            received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
+                            send_success(socket_descriptor, client_address);
+                            break;
+                        } else {
+                            send_fail(socket_descriptor, client_address);
                         }
                     }
                 }
-
-            } else if (packet_number >= packets_at_total ){
-                everything_received_mes(socket_descriptor,client_address);
-                receiving_file = 0;
-            } else {
-                sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
             }
-
-
-            for (int packet = 0; packet < MAX_PACKETS_AT_TIME; packet++) {
-                for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) {
-                    if (counter >= message_length) {
-                        receiving_file = 0;
-                        break;
-                    } // reached end of message
-                    fputc(mega_buffer[i+packet*(BUFFER_SIZE-SUB_BUFFER_SIZE)], new_file);
-                    counter++;
-                }
-            }
-            if (counter >= message_length) {
-                break;
-            }
-
+        } else if (packet_number >= packets_at_total ){
+            everything_received_mes(socket_descriptor,client_address);
+        } else {
+            sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
         }
-        if (counter >= message_length) {  // reached end of message
-          receiving_file = 0;
+
+
+        for (int packet = 0; packet < MAX_PACKETS_AT_TIME; packet++) {
+            for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) {
+                if (counter >= message_length) {
+                   break;
+                } // reached end of message
+                fputc(mega_buffer[i+packet*(BUFFER_SIZE-SUB_BUFFER_SIZE)], new_file);
+                counter++;
+            }
+        }
+        if (counter >= message_length) {
+            break;
         }
     }
     printf("Data packets received: %ld\n",packet_counter+1);
