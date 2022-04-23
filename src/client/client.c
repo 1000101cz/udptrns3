@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
     // set client port
     client_address.sin_port = htons(PORT_CLIENT);
-    bind(socket_descriptor,(struct sockaddr *)&client_address,sizeof(client_address));
+    //bind(socket_descriptor,(struct sockaddr *)&client_address,sizeof(client_address));
 
     // fill server information
     server_address.sin_family = AF_INET;
@@ -44,24 +44,30 @@ int main(int argc, char *argv[]) {
 
 
     //    HANDSHAKE
-    printf("\nHANDSHAKE >>>>>>>>>>>>>>>>\n");
+    print_text("\nHANDSHAKE\n",BLUE,1);
     long n_o_char = init_handshake(socket_descriptor, server_address, len, argv[2]);
 
 
     //    FILE-TRANSFER
-    printf("\nFILE-TRANSFER >>>>>>>>>>>>>>>>\n");
+    print_text("\nFILE-TRANSFER\n",BLUE,1);
+    printf("  - getting current time\n");
     gettimeofday(&start, NULL);
+    printf("  - sending file\n");
     send_file(argv[2], n_o_char, socket_descriptor, server_address, len);
+    printf("  - getting current time\n");
     gettimeofday(&stop, NULL);
     long time_taken = (stop.tv_sec - start.tv_sec)*1000 + (stop.tv_usec - start.tv_usec)/1000;
-    double time_taken_s = time_taken/1000.0;
-    printf("Time taken: %.3f s\n",time_taken_s);
-    printf("Transfer speed: %.1f MB/s\n\n",(double)(n_o_char/1000000)/time_taken_s);
+    printf("  - time taken:      %5ld  [ms]\n",time_taken);
+    printf("  - transfer speed:   %.1f  [MB/s]\n",(double)(n_o_char/1000000)/(time_taken/1000.0));
 
 
     //    TERMINATION
-    printf("\nTERMINATION >>>>>>>>>>>>>>>>\n");
-    termination_f(argv[2], socket_descriptor, server_address, len);
+    print_text("\nTERMINATION\n",BLUE,1);
+    if (termination_f(argv[2], socket_descriptor, server_address, len)) {
+        print_text("TRANSFER FAILED!\n",RED,1);
+    } else {
+        print_text("\nSUCCESS\n",GREEN,1);
+    }
 
 
     return 0;

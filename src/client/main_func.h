@@ -15,6 +15,7 @@
 #include "../crc32/crc32.h"
 #include "../libs/confirmations.h"
 #include "../libs/file_operations.h"
+#include "../libs/txt_clrs.h"
 
 
 // init_handshake
@@ -28,7 +29,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in server_address, in
 //
 // - terminate transmission
 // - send sha256 file hash and receive confirmation
-void termination_f(char *file_address, int socket_descriptor, struct sockaddr_in server_address, int len);
+_Bool termination_f(char *file_address, int socket_descriptor, struct sockaddr_in server_address, int len);
 
 
 

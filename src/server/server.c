@@ -35,22 +35,25 @@ int main(int argc, char *argv[]) {
 
 
     //    HANDSHAKE
-    printf("\nHANDSHAKE >>>>>>>>>>>>>>>>\n");
+    print_text("\nHANDSHAKE\n",BLUE,1);
     long message_length = init_handshake(socket_descriptor, client_address, len);
 
 
 
     //    FILE-TRANSFER
-    printf("\nFILE-TRANSFER >>>>>>>>>>>>>>>>\n");
+    print_text("\nFILE-TRANSFER\n",BLUE,1);
+    printf("  - receiving file\n");
     receive_message(file_dest, socket_descriptor, client_address, len, message_length);
 
 
 
     //     TERMINATION
-    printf("\nTERMINATION >>>>>>>>>>>>>>>>\n");
-    _Bool op_exit = termination_f(file_dest, socket_descriptor, client_address, len);
+    print_text("\nTERMINATION\n",BLUE,1);
+    if (termination_f(file_dest, socket_descriptor, client_address, len)) {
+        print_text("TRANSFER FAILED!\n",RED,1);
+    } else {
+        print_text("\nSUCCESS\n",GREEN,1);
+    }
 
-
-
-    return op_exit;
+    return 0;
 }

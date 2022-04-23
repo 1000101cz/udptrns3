@@ -157,5 +157,4 @@ void *hash_file(char *file_address, char hash[65]){
     }
     sha256_finalize(&buff);
     sha256_read_hex(&buff, hash);
-    printf("SHA256 hash: %s\n", hash);
 }

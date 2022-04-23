@@ -1,5 +1,23 @@
 #include "file_operations.h"
 
+static void send_mega_buffer(const unsigned char *mega_buffer, int socket_descriptor, long packets_at_total, struct sockaddr_in server_address, _Bool last_packet_sent) {
+    unsigned char packet_buffer[BUFFER_SIZE] = {'\0'};
+
+    for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
+        for (int j = 0; j < BUFFER_SIZE; j++) {
+            packet_buffer[j] = mega_buffer[j + i*BUFFER_SIZE];
+        }
+        // send buffer with data, CRC and packet number
+        sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address));
+        if (last_packet_sent && ((i+1)==packets_at_total%MAX_PACKETS_AT_TIME)) {
+            break;
+        }
+    }
+
+    // send confirmation request
+    confirmation_request(socket_descriptor,server_address);
+}
+
 // send file to server from client
 void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct sockaddr_in server_address, int len) {
     unsigned char sub_buffer[SUB_BUFFER_SIZE] = {'\0'};
@@ -54,20 +72,8 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
             number_of_packets++;
         }
 
-        // send all data in mega_packet
-        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
-            for (int j = 0; j < BUFFER_SIZE; j++) {
-                packet_buffer[j] = mega_buffer[j + i*BUFFER_SIZE];
-            }
-            // send buffer with data, CRC and packet number
-            sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address));
-            if (last_packet_sent && (i+1)==packets_at_total%MAX_PACKETS_AT_TIME) {
-                break;
-            }
-        }
-
-        // send confirmation request
-        confirmation_request(socket_descriptor,server_address);
+        // send all data in mega_buffer and confirmation request
+        send_mega_buffer(mega_buffer, socket_descriptor, packets_at_total, server_address, last_packet_sent);
 
         // receive confirmation or got_ales
         recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &server_address,(unsigned int*)&len);
@@ -89,8 +95,8 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
         }
     }
 
-    printf("Data packets sent: %d \n",number_of_packets);
-    printf("Total number of corrupted packets: %ld\n", total_error_count);
+    printf("  - data packets sent: %d \n",number_of_packets);
+    printf("  - total number of corrupted packets: %ld\n", total_error_count);
 
     fclose(read_file);
 }
@@ -245,7 +251,8 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
             break;
         }
     }
-    printf("Data packets received: %ld\n",packet_counter+1);
-    printf("Total number of corrupted packets: %ld\n", total_error_count);
+    printf("  - all data received\n");
+    printf("  - data packets received: %ld\n",packet_counter+1);
+    printf("  - total number of corrupted packets: %ld\n", total_error_count);
     fclose(new_file);
 }

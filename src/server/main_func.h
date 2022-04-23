@@ -12,6 +12,7 @@
 #include "../crc32/crc32.h"
 #include "../libs/confirmations.h"
 #include "../libs/file_operations.h"
+#include "../libs/txt_clrs.h"
 
 // init_handshake
 //
