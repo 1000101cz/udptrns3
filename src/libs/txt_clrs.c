@@ -22,14 +22,21 @@ void print_text(const char *string, int color, _Bool bold) {
 
             // red
             case 2:
-                printf("\033[1;31m");
-                printf("%s",string);
-                printf("\033[0m");
+                fprintf(stderr,"\033[1;31m");
+                fprintf(stderr,"%s",string);
+                fprintf(stderr,"\033[0m");
                 break;
 
             // blue
             case 3:
                 printf("\033[1;34m");
+                printf("%s",string);
+                printf("\033[0m");
+                break;
+
+            // yellow
+            case 4:
+                printf("\033[1;33m");
                 printf("%s",string);
                 printf("\033[0m");
                 break;
@@ -54,9 +61,9 @@ void print_text(const char *string, int color, _Bool bold) {
 
             // red
             case 2:
-                printf("\033[0;31m");
-                printf("%s",string);
-                printf("\033[0m");
+                fprintf(stderr,"\033[0;31m");
+                fprintf(stderr,"%s",string);
+                fprintf(stderr,"\033[0m");
                 break;
 
             // blue
@@ -66,6 +73,12 @@ void print_text(const char *string, int color, _Bool bold) {
                 printf("\033[0m");
                 break;
 
+            // yellow
+            case 4:
+                printf("\033[0;33m");
+                printf("%s",string);
+                printf("\033[0m");
+                break;
         }
     }
 

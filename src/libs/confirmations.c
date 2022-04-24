@@ -18,11 +18,12 @@ _Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len
 
     // Set socket timeout
     struct timeval tv;
-    tv.tv_sec = TIMEOUT_S;
-    tv.tv_usec =  TIMEOUT_MS * 1000;
     if (last_confirmation) {
-        tv.tv_sec = 0;
+        tv.tv_sec = 20;
         tv.tv_usec = 0;
+    } else {
+        tv.tv_sec = TIMEOUT_S;
+        tv.tv_usec =  TIMEOUT_MS * 1000;
     }
     setsockopt(socket_descriptor, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
 
@@ -60,33 +61,6 @@ void confirmation_request(int socket_descriptor, struct sockaddr_in server_addre
 // check is packet is confirmation request - server app
 _Bool packet_is_request(const unsigned char *buffer) {
     if (buffer[0]!='c' || buffer[1]!='o' || buffer[2]!='n' || buffer[3]!='f' || buffer[4]!=' ' || buffer[5]!='p' || buffer[6]!='l' || buffer[7]!='s') {
-        return 0;
-    }
-    for (int i = 8; i < BUFFER_SIZE; i++) {
-        if (buffer[i] != '1') {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-// send message to client that all packets were received
-void everything_received_mes(int socket_descriptor, struct sockaddr_in client_address) {
-    unsigned char buffer[BUFFER_SIZE];
-    buffer[0] = 'g';
-    buffer[1] = 'o';
-    buffer[2] = 't';
-    buffer[3] = ' ';
-    buffer[4] = 'a';
-    buffer[5] = 'l';
-    buffer[6] = 'e';
-    buffer[7] = 's';
-    for (int i = 8; i < BUFFER_SIZE; i++) { buffer[i] = '1'; }
-    sendto(socket_descriptor, buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
-}
-
-_Bool everything_received_rec(const unsigned char *buffer) {
-    if (buffer[0]!='g' || buffer[1]!='o' || buffer[2]!='t' || buffer[3]!=' ' || buffer[4]!='a' || buffer[5]!='l' || buffer[6]!='e' || buffer[7]!='s') {
         return 0;
     }
     for (int i = 8; i < BUFFER_SIZE; i++) {

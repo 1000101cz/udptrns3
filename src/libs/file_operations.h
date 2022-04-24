@@ -2,6 +2,7 @@
 #define FILE_OPERATIONS_H__
 
 #include "confirmations.h"
+#include "txt_clrs.h"
 #include "../crc32/crc32.h"
 
 // send_file

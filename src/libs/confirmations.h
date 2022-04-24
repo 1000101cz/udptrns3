@@ -13,18 +13,13 @@
 #define PORT_CLIENT     22223
 #define BUFFER_SIZE 1024
 #define SUB_BUFFER_SIZE 40
-#define TIMEOUT_S 1
-#define TIMEOUT_MS 0
-#define CRC_SIZE 4
+#define TIMEOUT_S 0
+#define TIMEOUT_MS 10
 #define MAX_SENT_REPEAT 20
 
 #define MAX_PACKETS_AT_TIME 50
 
 //#define GENERATE_ERRORS
-#ifdef GENERATE_ERRORS
-  #define DONT_SENT_CONF 900 // 1 in value (program will sleep for TIMEOUT each time)
-  #define CORRUPT_PACKET 50 // 1 in value
-#endif
 
 // send_success
 //   * send short success message
@@ -45,13 +40,5 @@ void confirmation_request(int socket_descriptor, struct sockaddr_in server_addre
 // packet_is_requested
 //   - check if received packet is confirmation request
 _Bool packet_is_request(const unsigned char *buffer);
-
-// everything_received_mes
-//   - send message to client that all packets were received
-void everything_received_mes(int socket_descriptor, struct sockaddr_in client_address);
-
-// everything_received_rec
-//   - check if received message is everything_received - client app
-_Bool everything_received_rec(const unsigned char *buffer);
 
 #endif

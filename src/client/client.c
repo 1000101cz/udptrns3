@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     //    TERMINATION
     print_text("\nTERMINATION\n",BLUE,1);
     if (termination_f(argv[2], socket_descriptor, server_address, len)) {
-        print_text("TRANSFER FAILED!\n",RED,1);
+        print_text("\nTRANSFER FAILED!\n",RED,1);
     } else {
         print_text("\nSUCCESS\n",GREEN,1);
     }
