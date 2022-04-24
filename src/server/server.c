@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
         return 100;
     }
     printf("File: %s\n",argv[1]);
+    printf("---------------------------------------------------\n");
 
     // Create socket file descriptor
     int socket_descriptor;

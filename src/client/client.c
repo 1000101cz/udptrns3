@@ -20,10 +20,6 @@ int main(int argc, char *argv[]) {
         return 100;
     }
 
-    printf("File: %s\n",argv[2]);
-    printf("Dest: %s:%d\n",argv[1],PORT_SERVER);
-    printf("----------------------\n");
-
     struct sockaddr_in server_address, client_address;
     memset(&server_address, 0, sizeof(server_address));
     memset(&client_address, 0, sizeof(client_address));
@@ -33,7 +29,17 @@ int main(int argc, char *argv[]) {
 
     // set client port
     client_address.sin_port = htons(PORT_CLIENT);
-    //bind(socket_descriptor,(struct sockaddr *)&client_address,sizeof(client_address));
+    if (bind(socket_descriptor,(struct sockaddr *)&client_address,sizeof(client_address)) != 0) {
+        fprintf(stderr, "Port %d binding error\n",PORT_CLIENT);
+        exit(100);
+    } else {
+        printf("File dst:  %s\n",argv[2]);
+        printf("Transfer:  IP_addr:%d   -> %15s:%d\n",PORT_CLIENT,argv[1],PORT_SERVER);
+        for (int i = 0; i < strlen(argv[1]) + 42; i++) {
+            printf("-");
+        }
+        printf("\n");
+    }
 
     // fill server information
     server_address.sin_family = AF_INET;
