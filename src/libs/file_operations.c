@@ -262,6 +262,7 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
                 packet_buffer_confirmation[i] = '1';
             } else {
                 packet_buffer_confirmation[i] = '0';
+                total_error_count++;
                 not_received++;
             }
         }
@@ -270,6 +271,7 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
             for (int i = (int)packets_at_total % MAX_PACKETS_AT_TIME; i < MAX_PACKETS_AT_TIME; i++) {
                 packet_buffer_confirmation[i] = '1';
                 received_packets[i] = 1;
+                total_error_count--;
                 not_received--;
             }
         }
@@ -350,9 +352,13 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
 
         for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
             if (!received_packets[i]) {
-                printf("Packets are still missing!\n");
+                print_text("Packets are still missing!\n",RED,0);
                 exit(100);
             }
+        }
+
+        if (not_received > 0) {
+            print_text("  - missing packets from mega_buffer received successfully\n", 0, 0);
         }
 
         for (int packet = 0; packet < MAX_PACKETS_AT_TIME; packet++) {

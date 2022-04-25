@@ -21,7 +21,7 @@
 #define BUFFER_SIZE 1024
 #define SUB_BUFFER_SIZE 40
 #define TIMEOUT_S 0
-#define TIMEOUT_MS 100 // 10 without netderper
+#define TIMEOUT_MS 10 // 100 with netderper
 #define MAX_SENT_REPEAT 20
 
 #define MAX_PACKETS_AT_TIME 50
