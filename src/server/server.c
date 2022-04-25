@@ -25,6 +25,10 @@ int main(int argc, char *argv[]) {
     memset(&client_address, 0, sizeof(client_address));
     int len = sizeof(client_address);
 
+#ifdef NETDERPER
+    client_address.sin_port = htons(PORT_NETDERPER_2);
+#endif
+
     // fill server information
     server_address.sin_family    = AF_INET; // IPv4
     server_address.sin_addr.s_addr = INADDR_ANY;

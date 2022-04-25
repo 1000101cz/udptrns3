@@ -43,7 +43,12 @@ int main(int argc, char *argv[]) {
 
     // fill server information
     server_address.sin_family = AF_INET;
+#ifdef NETDERPER
+    server_address.sin_port = htons(PORT_NETDERPER_1);
+#endif
+#ifndef NETDERPER
     server_address.sin_port = htons(PORT_SERVER);
+#endif
     server_address.sin_addr.s_addr = inet_addr(argv[1]);
 
 

@@ -214,6 +214,9 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
         for (int i = 0; i < MAX_PACKETS_AT_TIME + 1; i++) {
             // receive packet with data number and CRC
             long lngth = recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
+#ifdef NETDERPER
+            client_address.sin_port = htons(PORT_NETDERPER_2);
+#endif
             if (lngth == 25) {
                 send_success(socket_descriptor, client_address);
                 i--;
@@ -226,6 +229,7 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
 
             // separate number
             packet_number = separate_number(packet_buffer);
+            //printf("received packet %ld\n",packet_number);
 
             // separate CRC
             crc_received = separate_crc(packet_buffer);
@@ -306,6 +310,9 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
                     repaired_packets_num++;
                     while (1) {
                         recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
+#ifdef NETDERPER
+                        client_address.sin_port = htons(PORT_NETDERPER_2);
+#endif
                         if (packet_is_request(packet_buffer)) {
                             sendto(socket_descriptor, packet_buffer_confirmation, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
                             continue;
@@ -337,8 +344,6 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
             }
         } else if (packet_number >= packets_at_total ){
             send_success(socket_descriptor, client_address);
-            //everything_received_mes(socket_descriptor,client_address);
-            //printf("  - everything_received_mes sent\n");
         } else { // send confirmation that all packets were successfully received
             sendto(socket_descriptor, packet_buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
         }

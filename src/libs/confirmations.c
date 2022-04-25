@@ -3,12 +3,18 @@
 void send_success(int socket_descriptor, struct sockaddr_in client_address) {
     unsigned char buffer[5];
     for (int i = 0; i < 5; i++) { buffer[i] = '1'; }
+#ifdef NETDERPER
+    client_address.sin_port = htons(PORT_NETDERPER_2);
+#endif
     sendto(socket_descriptor, buffer, sizeof(unsigned char)*5,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
 }
 
 void send_fail(int socket_descriptor, struct sockaddr_in client_address) {
     unsigned char buffer[5];
     for (int i = 0; i < 5; i++) { buffer[i] = '0'; }
+#ifdef NETDERPER
+    client_address.sin_port = htons(PORT_NETDERPER_2);
+#endif
     sendto(socket_descriptor, buffer, sizeof(unsigned char)*5,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
 }
 
