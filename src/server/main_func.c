@@ -76,21 +76,38 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
     printf(string1,0,0);
 
     // receive SHA256 hash
-    print_text("  - receiving sha256 hash\n",0,0);
     unsigned char buffer[HASH_BUFFER_SIZE] = {'\0'};
-    long lngth = recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
+
     while (1) {
-        if (lngth != HASH_BUFFER_SIZE) {
-            print_text("  ! didn't receive expected hash\n", RED, 0);
-            send_success(socket_descriptor, client_address);
-            recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
-        } else {
+        print_text("  - receiving sha256 hash\n",0,0);
+        long lngth = recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
+        if (lngth < HASH_BUFFER_SIZE) {
+            continue;
+        }
+        _Bool hash_yes = 1;
+        for (int i = 0; i < HASH_BUFFER_SIZE-1; i++) {
+            int character_value = buffer[i];
+            if (character_value < 48 || (character_value>57 && character_value<97) || character_value > 122) {
+                printf("  - received: %s\n",buffer);
+                print_text("  ! not hash\n",RED,0);
+                hash_yes = 0;
+                send_success(socket_descriptor, client_address);
+                break;
+            }
+        }
+        if (hash_yes) {
             break;
         }
     }
     char string[1050];
     sprintf(string,"  - received hash: %s\n",buffer);
     print_text(string,0,0);
+    /*unsigned char a = 97;
+    unsigned char z = 122;
+    unsigned char zero = 48;
+    unsigned char nine = 57;
+    printf("\n\n\n%c\n%c\n%c\n%c\n\n\n\n",zero,nine,a,z);*/
+
 
     // compare received and computed hashes
     _Bool fucked = 0;

@@ -33,7 +33,7 @@ _Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len
     recvfrom(socket_descriptor, str, sizeof(unsigned char)*5,MSG_WAITALL, ( struct sockaddr *) &server_address,(unsigned int*)&len);
 
     tv.tv_sec = TIMEOUT_S;
-    tv.tv_usec = TIMEOUT_MS;
+    tv.tv_usec = TIMEOUT_MS*1000;
     setsockopt(socket_descriptor, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
 
     int n_o_0 = 0;

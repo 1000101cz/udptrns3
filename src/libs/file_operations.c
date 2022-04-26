@@ -105,6 +105,7 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
             if (packet_buffer[i] == '0') {
                 server_missing++;
                 server_missing_bools[i] = 1;
+                printf("server missing packet %d\n",i);
             }
         }
 
@@ -229,7 +230,14 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
 
             // separate number
             packet_number = separate_number(packet_buffer);
-            printf("    - received packet %ld\n",packet_number);
+            //printf("    - received packet %ld | highest received last %d\n",packet_number,highest_received_last);
+
+            if (i==0 && packet_number == highest_received_last+1 && highest_received_last%MAX_PACKETS_AT_TIME != 0) {    // + _last
+                send_success(socket_descriptor, client_address);
+                i--;
+                continue;
+            }
+
 
             if(packet_number < highest_received_last) {
                 printf("strange...\n");
@@ -275,7 +283,7 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
             }
         }
 
-        if (highest_received >= packets_at_total) {
+        if (highest_received > (packets_at_total-packets_at_total%MAX_PACKETS_AT_TIME)) {
             print_text("    - confirming not existing packages\n",GRAY,0);
             for (int i = (int)packets_at_total % MAX_PACKETS_AT_TIME; i < MAX_PACKETS_AT_TIME; i++) {
                 packet_buffer_confirmation[i] = '1';
@@ -347,7 +355,9 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
                             received_packets[packet_number%MAX_PACKETS_AT_TIME] = 1;
                             if (i == packet_number%MAX_PACKETS_AT_TIME) {
                                 send_success(socket_descriptor, client_address);
-                                highest_received = packet_number;
+                                if (packet_number > highest_received) {
+                                    highest_received = packet_number;
+                                }
                                 // save to mega_buffer
                                 for (int character = 0; character < BUFFER_SIZE-SUB_BUFFER_SIZE; character++) {
                                     mega_buffer[character+i*(BUFFER_SIZE-SUB_BUFFER_SIZE)] = data_buffer[character];
@@ -366,8 +376,6 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
                     }
                 }
             }
-        } else if (packet_number >= packets_at_total ){
-            send_success(socket_descriptor, client_address);
         } else { // send confirmation that all packets were successfully received
             sendto(socket_descriptor, packet_buffer_confirmation, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
             print_text("    - packet confirmation sent (all packets successfully received)\n",GRAY,0);
