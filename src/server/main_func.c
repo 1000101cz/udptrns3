@@ -39,17 +39,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
         }
 
         if (computed_init_crc == init_crc) {
-#ifdef GENERATE_ERRORS
-            if (try_number != 0) {  // Don't send first confirmation
-                send_success(socket_descriptor, client_address);
-            } else {
-                print_text("  % ERROR_GEN: ",YELLOW,0);
-                print_text("discarding confirmation ( in init_handshake() )\n",0,0);
-            }
-#endif
-#ifndef GENERATE_ERRORS
             send_success(socket_descriptor, client_address);
-#endif
             break;
         } else {
             send_fail(socket_descriptor, client_address);
@@ -87,13 +77,13 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
 
     // receive SHA256 hash
     print_text("  - receiving sha256 hash\n",0,0);
-    unsigned char buffer[BUFFER_SIZE] = {'\0'};
-    recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
+    unsigned char buffer[HASH_BUFFER_SIZE] = {'\0'};
+    long lngth = recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
     while (1) {
-        if (packet_is_request(buffer)) {
-            print_text("  ! received request, expected hash\n", RED, 0);
+        if (lngth != HASH_BUFFER_SIZE) {
+            print_text("  ! didn't receive expected hash\n", RED, 0);
             send_success(socket_descriptor, client_address);
-            recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
+            recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
         } else {
             break;
         }

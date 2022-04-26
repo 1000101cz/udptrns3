@@ -26,7 +26,11 @@ int main(int argc, char *argv[]) {
     int len = sizeof(client_address);
 
 #ifdef NETDERPER
+    print_text("NETDERPER ON\n",RED,1);
     client_address.sin_port = htons(PORT_NETDERPER_2);
+#endif
+#ifndef NETDERPER
+    print_text("NETDERPER OFF\n",GREEN,1);
 #endif
 
     // fill server information

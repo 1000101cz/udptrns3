@@ -45,8 +45,10 @@ int main(int argc, char *argv[]) {
     server_address.sin_family = AF_INET;
 #ifdef NETDERPER
     server_address.sin_port = htons(PORT_NETDERPER_1);
+    print_text("NETDERPER ON\n",RED,1);
 #endif
 #ifndef NETDERPER
+    print_text("NETDERPER OFF\n",GREEN,1);
     server_address.sin_port = htons(PORT_SERVER);
 #endif
     server_address.sin_addr.s_addr = inet_addr(argv[1]);
@@ -61,11 +63,9 @@ int main(int argc, char *argv[]) {
 
     //    FILE-TRANSFER
     print_text("\nFILE-TRANSFER\n",BLUE,1);
-    printf("  - getting current time\n");
     gettimeofday(&start, NULL);
     printf("  - sending file\n");
     send_file(argv[2], n_o_char, socket_descriptor, server_address, len);
-    printf("  - getting current time\n");
     gettimeofday(&stop, NULL);
     long time_taken = (stop.tv_sec - start.tv_sec)*1000 + (stop.tv_usec - start.tv_usec)/1000;
     printf("  - time taken:      %5ld  [ms]\n",time_taken);

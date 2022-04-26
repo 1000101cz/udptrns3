@@ -9,10 +9,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "txt_clrs.h"
+
 #define PORT_SERVER     32222
 #define PORT_CLIENT     22223
 
-//#define NETDERPER
+#define NETDERPER
 #ifdef NETDERPER
     #define PORT_NETDERPER_1 14000
     #define PORT_NETDERPER_2 14001
@@ -20,13 +22,12 @@
 
 #define BUFFER_SIZE 1024
 #define SUB_BUFFER_SIZE 40
-#define TIMEOUT_S 0
-#define TIMEOUT_MS 10 // 100 with netderper
+#define HASH_BUFFER_SIZE 65
+#define TIMEOUT_S 1
+#define TIMEOUT_MS 0 // 10 without netderper
 #define MAX_SENT_REPEAT 20
 
 #define MAX_PACKETS_AT_TIME 50
-
-//#define GENERATE_ERRORS
 
 // send_success
 //   * send short success message

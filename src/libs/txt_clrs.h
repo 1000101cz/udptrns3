@@ -7,6 +7,7 @@
 #define RED 2
 #define BLUE 3
 #define YELLOW 4
+#define GRAY 5
 
 void print_text(const char *string, int color, _Bool bold);
 

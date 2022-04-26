@@ -41,6 +41,13 @@ void print_text(const char *string, int color, _Bool bold) {
                 printf("\033[0m");
                 break;
 
+            // gray
+            case 5:
+                printf("\033[1;30m");
+                printf("%s",string);
+                printf("\033[0m");
+                break;
+
         }
     } else{
         switch (color) {
@@ -76,6 +83,13 @@ void print_text(const char *string, int color, _Bool bold) {
             // yellow
             case 4:
                 printf("\033[0;33m");
+                printf("%s",string);
+                printf("\033[0m");
+                break;
+
+                // gray
+            case 5:
+                printf("\033[1;30m");
                 printf("%s",string);
                 printf("\033[0m");
                 break;
