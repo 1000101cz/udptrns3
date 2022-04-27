@@ -10,7 +10,9 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
     int buf_2_position;
     long init_crc, message_length;
     unsigned long computed_init_crc;
+#ifdef DEBUG
     print_text("  - receiving handshake message\n",0,0);
+#endif
     int try_number = 0;
     while (1) {
         recvfrom(socket_descriptor, init_buffer, sizeof(unsigned char) * 25, MSG_WAITALL,(struct sockaddr *) &client_address, (unsigned int *) &len);
@@ -43,7 +45,9 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
             break;
         } else {
             send_fail(socket_descriptor, client_address);
+#ifdef DEBUG
             print_text("  ! invalid CRC\n",RED,0);
+#endif
         }
         try_number++;
     }
@@ -67,7 +71,9 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
 // receive sha256 file hash and compare it with computed hash
 _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in client_address, int len) {
     // compute SHA256 hash
+#ifdef DEBUG
     print_text("  - computing sha256 hash\n",0,0);
+#endif
     char hash[65] = {0}; // create empty hash array
     hash_file(file_dest,hash); // fill array with hash
 
@@ -79,7 +85,9 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
     unsigned char buffer[HASH_BUFFER_SIZE] = {'\0'};
 
     while (1) {
+#ifdef DEBUG
         print_text("  - receiving sha256 hash\n",0,0);
+#endif
         long lngth = recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
         if (lngth < HASH_BUFFER_SIZE) {
             continue;
@@ -87,9 +95,12 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
         _Bool hash_yes = 1;
         for (int i = 0; i < HASH_BUFFER_SIZE-1; i++) {
             int character_value = buffer[i];
-            if (character_value < 48 || (character_value>57 && character_value<97) || character_value > 122) {
-                printf("  - received: %s\n",buffer);
+            if (character_value < 48 || (character_value>57 && character_value<97) || character_value > 122) { // check if string is hash
+#ifdef DEBUG
+                sprintf(string1,"  - received: %s\n",buffer);
+                print_text(string1,0,0);
                 print_text("  ! not hash\n",RED,0);
+#endif
                 hash_yes = 0;
                 send_success(socket_descriptor, client_address);
                 break;
@@ -102,11 +113,6 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
     char string[1050];
     sprintf(string,"  - received hash: %s\n",buffer);
     print_text(string,0,0);
-    /*unsigned char a = 97;
-    unsigned char z = 122;
-    unsigned char zero = 48;
-    unsigned char nine = 57;
-    printf("\n\n\n%c\n%c\n%c\n%c\n\n\n\n",zero,nine,a,z);*/
 
 
     // compare received and computed hashes
