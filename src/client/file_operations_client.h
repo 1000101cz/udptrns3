@@ -1,6 +1,6 @@
 #include "../libs/confirmations.h"
 #include "../libs/txt_clrs.h"
-#include "../crc32/crc32.h"
+#include "../libs/crc32/crc32.h"
 
 #ifndef UDPTRNS3_FILE_OPERATIONS_CLIENT_H
 #define UDPTRNS3_FILE_OPERATIONS_CLIENT_H

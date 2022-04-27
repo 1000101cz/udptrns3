@@ -8,8 +8,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "../sha256/sha256.h"
-#include "../crc32/crc32.h"
+#include "../libs/sha256/sha256.h"
+#include "../libs/crc32/crc32.h"
 #include "../libs/confirmations.h"
 #include "file_operations_server.h"
 #include "../libs/txt_clrs.h"
