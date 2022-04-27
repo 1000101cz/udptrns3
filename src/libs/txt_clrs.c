@@ -1,5 +1,5 @@
 #include "txt_clrs.h"
-#include "confirmations.h"
+#include "confirmations.h"  // for DEBUG macro
 
 void print_text(const char *string, int color, _Bool bold, _Bool debug_message) {
     _Bool debug_on = 0;

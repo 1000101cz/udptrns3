@@ -14,7 +14,7 @@
 #include "../sha256/sha256.h"
 #include "../crc32/crc32.h"
 #include "../libs/confirmations.h"
-#include "../libs/file_operations.h"
+#include "file_operations_client.h"
 #include "../libs/txt_clrs.h"
 
 

@@ -34,7 +34,9 @@ int main(int argc, char *argv[]) {
         exit(100);
     } else {
         printf("File dst:  %s\n",argv[2]);
+#ifndef NETDERPER
         printf("Transfer:  IP_addr:%d   -> %15s:%d\n",PORT_CLIENT,argv[1],PORT_SERVER);
+#endif
         for (int i = 0; i < strlen(argv[1]) + 42; i++) {
             printf("-");
         }
