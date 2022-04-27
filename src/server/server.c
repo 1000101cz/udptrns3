@@ -26,11 +26,11 @@ int main(int argc, char *argv[]) {
     int len = sizeof(client_address);
 
 #ifdef NETDERPER
-    print_text("NETDERPER ON\n",RED,1);
+    print_text("NETDERPER ON\n",RED,1,0);
     client_address.sin_port = htons(PORT_NETDERPER_2);
 #endif
 #ifndef NETDERPER
-    print_text("NETDERPER OFF\n",GREEN,1);
+    print_text("NETDERPER OFF\n",GREEN,1,0);
 #endif
 
     // fill server information
@@ -44,24 +44,24 @@ int main(int argc, char *argv[]) {
 
 
     //    HANDSHAKE
-    print_text("\nHANDSHAKE\n",BLUE,1);
+    print_text("\nHANDSHAKE\n",BLUE,1,0);
     long message_length = init_handshake(socket_descriptor, client_address, len);
 
 
 
     //    FILE-TRANSFER
-    print_text("\nFILE-TRANSFER\n",BLUE,1);
+    print_text("\nFILE-TRANSFER\n",BLUE,1,0);
     printf("  - receiving file\n");
     receive_message(file_dest, socket_descriptor, client_address, len, message_length);
 
 
 
     //     TERMINATION
-    print_text("\nTERMINATION\n",BLUE,1);
+    print_text("\nTERMINATION\n",BLUE,1,0);
     if (termination_f(file_dest, socket_descriptor, client_address, len)) {
-        print_text("\nTRANSFER FAILED!\n",RED,1);
+        print_text("\nTRANSFER FAILED!\n",RED,1,0);
     } else {
-        print_text("\nSUCCESS\n",GREEN,1);
+        print_text("\nSUCCESS\n",GREEN,1,0);
     }
 
     return 0;

@@ -14,7 +14,7 @@
 #define PORT_SERVER     32222
 #define PORT_CLIENT     22223
 
-//#define DEBUG
+#define DEBUG
 #define NETDERPER
 #ifdef NETDERPER
     #define PORT_NETDERPER_1 14000

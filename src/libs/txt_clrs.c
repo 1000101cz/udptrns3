@@ -1,6 +1,17 @@
 #include "txt_clrs.h"
+#include "confirmations.h"
 
-void print_text(const char *string, int color, _Bool bold) {
+void print_text(const char *string, int color, _Bool bold, _Bool debug_message) {
+    _Bool debug_on = 0;
+
+#ifdef DEBUG
+    debug_on = 1;
+#endif
+
+    if (!debug_on && debug_message) {
+        return;
+    }
+
     if (bold) {
         switch (color) {
             default:

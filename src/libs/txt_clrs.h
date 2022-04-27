@@ -9,6 +9,6 @@
 #define YELLOW 4
 #define GRAY 5
 
-void print_text(const char *string, int color, _Bool bold);
+void print_text(const char *string, int color, _Bool bold, _Bool debug_message);
 
 #endif //UDPTRNS3_TXT_CLRS_H

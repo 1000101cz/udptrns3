@@ -10,9 +10,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
     int buf_2_position;
     long init_crc, message_length;
     unsigned long computed_init_crc;
-#ifdef DEBUG
-    print_text("  - receiving handshake message\n",0,0);
-#endif
+    print_text("  - receiving handshake message\n",0,0,1);
     int try_number = 0;
     while (1) {
         recvfrom(socket_descriptor, init_buffer, sizeof(unsigned char) * 25, MSG_WAITALL,(struct sockaddr *) &client_address, (unsigned int *) &len);
@@ -45,13 +43,11 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
             break;
         } else {
             send_fail(socket_descriptor, client_address);
-#ifdef DEBUG
-            print_text("  ! invalid CRC\n",RED,0);
-#endif
+            print_text("  ! invalid CRC\n",RED,0,1);
         }
         try_number++;
     }
-    print_text("  - handshake successfully received\n",GREEN,0);
+    print_text("  - handshake successfully received\n",GREEN,0,0);
 
     // get IP address of client (not necessary)
     struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&client_address;
@@ -61,9 +57,9 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
 
     char string[100];
     sprintf(string,"  - source address:  %s:%d\n",ip_str,ntohs(client_address.sin_port));
-    print_text(string,0,0);
+    print_text(string,0,0,0);
     sprintf(string,"  - length of file:  %ld [kB]\n",message_length/1000);
-    print_text(string,0,0);
+    print_text(string,0,0,0);
 
     return message_length;
 }
@@ -71,9 +67,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
 // receive sha256 file hash and compare it with computed hash
 _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in client_address, int len) {
     // compute SHA256 hash
-#ifdef DEBUG
-    print_text("  - computing sha256 hash\n",0,0);
-#endif
+    print_text("  - computing sha256 hash\n",0,0,1);
     char hash[65] = {0}; // create empty hash array
     hash_file(file_dest,hash); // fill array with hash
 
@@ -85,9 +79,7 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
     unsigned char buffer[HASH_BUFFER_SIZE] = {'\0'};
 
     while (1) {
-#ifdef DEBUG
-        print_text("  - receiving sha256 hash\n",0,0);
-#endif
+        print_text("  - receiving sha256 hash\n",0,0,1);
         long lngth = recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
         if (lngth < HASH_BUFFER_SIZE) {
             continue;
@@ -96,11 +88,9 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
         for (int i = 0; i < HASH_BUFFER_SIZE-1; i++) {
             int character_value = buffer[i];
             if (character_value < 48 || (character_value>57 && character_value<97) || character_value > 122) { // check if string is hash
-#ifdef DEBUG
                 sprintf(string1,"  - received: %s\n",buffer);
-                print_text(string1,0,0);
-                print_text("  ! not hash\n",RED,0);
-#endif
+                print_text(string1,0,0,1);
+                print_text("  ! not hash\n",RED,0,1);
                 hash_yes = 0;
                 send_success(socket_descriptor, client_address);
                 break;
@@ -112,14 +102,14 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
     }
     char string[1050];
     sprintf(string,"  - received hash: %s\n",buffer);
-    print_text(string,0,0);
+    print_text(string,0,0,0);
 
 
     // compare received and computed hashes
     _Bool fucked = 0;
     for (int i = 0; i < 65; i++) {
         if (hash[i] != buffer[i]) {
-            print_text("  - hashes do not match!\n",RED,0);
+            print_text("  - hashes do not match!\n",RED,0,0);
             fucked = 1;
             send_fail(socket_descriptor, client_address);
             break;
@@ -127,7 +117,7 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
     }
 
     if (!fucked) {
-        print_text("  + hashes are identical\n",GREEN,0);
+        print_text("  + hashes are identical\n",GREEN,0,0);
         send_success(socket_descriptor, client_address); // send Success if they match
     }
     return fucked;

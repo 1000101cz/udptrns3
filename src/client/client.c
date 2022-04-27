@@ -45,10 +45,10 @@ int main(int argc, char *argv[]) {
     server_address.sin_family = AF_INET;
 #ifdef NETDERPER
     server_address.sin_port = htons(PORT_NETDERPER_1);
-    print_text("NETDERPER ON\n",RED,1);
+    print_text("NETDERPER ON\n",RED,1,0);
 #endif
 #ifndef NETDERPER
-    print_text("NETDERPER OFF\n",GREEN,1);
+    print_text("NETDERPER OFF\n",GREEN,1,0);
     server_address.sin_port = htons(PORT_SERVER);
 #endif
     server_address.sin_addr.s_addr = inet_addr(argv[1]);
@@ -57,12 +57,12 @@ int main(int argc, char *argv[]) {
 
 
     //    HANDSHAKE
-    print_text("\nHANDSHAKE\n",BLUE,1);
+    print_text("\nHANDSHAKE\n",BLUE,1,0);
     long n_o_char = init_handshake(socket_descriptor, server_address, len, argv[2]);
 
 
     //    FILE-TRANSFER
-    print_text("\nFILE-TRANSFER\n",BLUE,1);
+    print_text("\nFILE-TRANSFER\n",BLUE,1,0);
     gettimeofday(&start, NULL);
     printf("  - sending file\n");
     send_file(argv[2], n_o_char, socket_descriptor, server_address, len);
@@ -73,11 +73,11 @@ int main(int argc, char *argv[]) {
 
 
     //    TERMINATION
-    print_text("\nTERMINATION\n",BLUE,1);
+    print_text("\nTERMINATION\n",BLUE,1,0);
     if (termination_f(argv[2], socket_descriptor, server_address, len)) {
-        print_text("\nTRANSFER FAILED!\n",RED,1);
+        print_text("\nTRANSFER FAILED!\n",RED,1,0);
     } else {
-        print_text("\nSUCCESS\n",GREEN,1);
+        print_text("\nSUCCESS\n",GREEN,1,0);
     }
 
 
