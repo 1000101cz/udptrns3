@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     //    FILE-TRANSFER
     print_text("\nFILE-TRANSFER\n",BLUE,1,0);
     printf("  - receiving file\n");
-    receive_message(file_dest, socket_descriptor, client_address, len, message_length);
+    receive_file(file_dest, socket_descriptor, client_address, len, message_length);
 
 
 

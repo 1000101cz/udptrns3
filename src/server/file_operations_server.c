@@ -32,7 +32,7 @@ long separate_crc(const unsigned char *buffer) {
 }
 
 // receive file from client
-void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in client_address, int len, long message_length) {
+void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in client_address, int len, long message_length) {
     unsigned char data_buffer[BUFFER_SIZE-SUB_BUFFER_SIZE] = {'\0'};
     unsigned char packet_buffer[BUFFER_SIZE] = {'\0'};
     unsigned char packet_buffer_confirmation[BUFFER_SIZE] = {'\0'};
@@ -54,7 +54,8 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
     new_file = fopen(file_dest,"wb");
 
     int highest_received = -1;
-    int highest_received_last = -1;
+    int actual_min;
+    int actual_max;
 
     int cycle = 0;
     int mega_buffer_number = 0;
@@ -65,36 +66,43 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
         // receive MAX_PACKETS_AT_TIME packets
         sprintf(string, "\n  - START mega_buffer %d\n",mega_buffer_number);
         print_text(string,BLUE,0,1);
+
+        actual_min = cycle*MAX_PACKETS_AT_TIME+1;
+        actual_max = (cycle+1)*MAX_PACKETS_AT_TIME;
+        printf("    - expecting packets in range <%d ; %d>\n",actual_min,actual_max);
+
         for (int i = 0; i < MAX_PACKETS_AT_TIME + 1; i++) {
+
+            for (int x = 0; x < BUFFER_SIZE; x++) {
+                packet_buffer[x] = '0';
+            }
+
             // receive packet with data number and CRC
-            long lngth = recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
+            long length = recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
 #ifdef NETDERPER
             client_address.sin_port = htons(PORT_NETDERPER_2);
 #endif
-            if (lngth == 25) {
+            printf("    - received message length: %ld\n",length);
+            if (length == 25) {
                 print_text("  - didn't receive data or request...\n",GRAY,0,1);
                 send_success(socket_descriptor, client_address);
                 i--;
                 continue;
             }
             if (packet_is_request(packet_buffer)) {
+                print_text("  - received request, breaking mega_buffer cycle\n",0,0,1);
                 break;
             }
             packet_counter++;
 
             // separate number
             packet_number = separate_number(packet_buffer);
-            //printf("    - received packet %ld | highest received last %d\n",packet_number,highest_received_last);
-
-            if (i==0 && packet_number == highest_received_last+1 && highest_received_last%MAX_PACKETS_AT_TIME != 0) {    // + _last
-                send_success(socket_descriptor, client_address);
-                i--;
-                continue;
-            }
+            print_text("    - number separated\n",0,0,1);
 
 
-            if(packet_number < highest_received_last) {
-                print_text("strange... (packet from previous mega_buffer)\n",RED,0,0);
+
+            if (packet_number < actual_min || packet_number > actual_max) {   // <
+                print_text("    ! (packet from different mega_buffer)\n",RED,0,0);
                 send_success(socket_descriptor, client_address);
             }
 
@@ -107,23 +115,24 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
             }
 
             // compute CRC
+            // TODO - include Packet number to CRC
             crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
 
             // check CRC and file number
             if (crc_computed == crc_received) {
+                printf("    - received packet %ld\n",packet_number);
+                received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
                 if (packet_number > highest_received) {
                     highest_received = (int)packet_number;
                 }
-                received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
                 for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) {
                     mega_buffer[((packet_number-1)%MAX_PACKETS_AT_TIME)*(BUFFER_SIZE-SUB_BUFFER_SIZE) + j] = data_buffer[j];
                 }
-                //break;
             } else {
-                received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 0;
-                print_text("  ! CRC do not match\n",RED,0,1);
+                print_text("    ! CRC do not match\n",RED,0,1);
             }
         }
+        print_text("  - end receiving standard packets\n",0,0,1);
 
         // send everything_received or confirmation
         int not_received = 0;
@@ -153,11 +162,11 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
         }
 
         if (not_received>0) {
-            sprintf(string, "    ! %d packets missing from last mega_buffer\n", not_received);
+            sprintf(string, "    ! %d packets missing from mega_buffer\n", not_received);
             print_text(string, RED, 0,1);
             for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
                 if (!received_packets[i]) {
-                    sprintf(string, "    - missing packet %d\n", i);
+                    sprintf(string, "    - missing packet %d\n", i+cycle*MAX_PACKETS_AT_TIME);
                     print_text(string, RED, 0,1);
                 }
             }
@@ -179,6 +188,7 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
             sendto(socket_descriptor, packet_buffer_confirmation, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
             print_text("    - mega_buffer confirmation sent (missing some packets)\n",GRAY,0,1);
 
+            print_text("\n    - receiving repair packets\n",BLUE,0,1);
             for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
                 if (!received_packets[i]) {
                     repaired_packets_num++;
@@ -196,7 +206,7 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
                             continue;
                         }
                         packet_number = separate_number(packet_buffer) - 1; // separate number
-                        sprintf(string,"    - received packet %ld | i %d\n",packet_number,i);
+                        sprintf(string,"    - received packet %ld\n",packet_number);
                         print_text(string,0,0,1);
                         crc_received = separate_crc(packet_buffer); // separate CRC
                         // separate data
@@ -219,6 +229,15 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
                                 print_text("    ! received wrong repair packet\n",RED,0,1);
                                 if (packet_number%MAX_PACKETS_AT_TIME < i) {
                                     send_success(socket_descriptor, client_address);
+                                } else if (packet_number%MAX_PACKETS_AT_TIME > highest_received) { // previous confirmation mistake
+                                    send_success(socket_descriptor, client_address);
+                                    if (packet_number > highest_received) {
+                                        highest_received = (int)packet_number;
+                                    }
+                                    // save to mega_buffer
+                                    for (int character = 0; character < BUFFER_SIZE-SUB_BUFFER_SIZE; character++) {
+                                        mega_buffer[character+i*(BUFFER_SIZE-SUB_BUFFER_SIZE)] = data_buffer[character];
+                                    }
                                 }
                                 continue;
                             }
@@ -234,7 +253,6 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
             print_text("    - packet confirmation sent (all packets successfully received)\n",GRAY,0,1);
         }
 
-        highest_received_last = highest_received;
 
         for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
             if (!received_packets[i]) {
@@ -244,7 +262,7 @@ void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in 
         }
 
         if (not_received > 0) {
-            print_text("    - missing packets from mega_buffer received successfully\n", GRAY, 0,1);
+            print_text("    - missing packets from mega_buffer received successfully\n\n", BLUE, 0,1);
         }
         sprintf(string, "  - END mega_buffer %d\n",mega_buffer_number);
         print_text(string,BLUE,0,1);

@@ -9,6 +9,6 @@
 // receive_message
 //
 // - receive file from client
-void receive_message(char *file_dest, int socket_descriptor, struct sockaddr_in client_address, int len, long message_length);
+void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in client_address, int len, long message_length);
 
 #endif //UDPTRNS3_FILE_OPERATIONS_SERVER_H

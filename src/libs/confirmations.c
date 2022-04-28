@@ -53,7 +53,7 @@ _Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len
         print_text("    - received SUCCESS confirmation\n",GRAY,0,1);
         return 1;
     } else {
-        print_text("    ! received fucked up confirmation (handle as FAIL)\n",RED,0,1);
+        print_text("    ! did not receive confirmation (handle as FAIL)\n",RED,0,1);
         return 0;
     }
 }
@@ -70,7 +70,7 @@ void confirmation_request(int socket_descriptor, struct sockaddr_in server_addre
     buffer[6] = 'l';
     buffer[7] = 's';
     for (int i = 8; i < BUFFER_SIZE; i++) { buffer[i] = '1'; }
-    usleep(10000); // conf pls must be last message
+    usleep(120000); // conf pls must be last message
 #ifdef NETDERPER
     server_address.sin_port = htons(PORT_NETDERPER_1);
 #endif
@@ -80,14 +80,18 @@ void confirmation_request(int socket_descriptor, struct sockaddr_in server_addre
 
 // check is packet is confirmation request - server app
 _Bool packet_is_request(const unsigned char *buffer) {
-    if (buffer[0]!='c' || buffer[1]!='o' || buffer[2]!='n' || buffer[3]!='f' || buffer[4]!=' ' || buffer[5]!='p' || buffer[6]!='l' || buffer[7]!='s') {
-        return 0;
-    }
-    for (int i = 8; i < BUFFER_SIZE; i++) {
-        if (buffer[i] != '1') {
-            return 0;
+
+    int number_of_ones = 0;
+    for (int i = 8; i < 30; i++) {
+        if (buffer[i] == '1') {
+            number_of_ones++;
         }
     }
+
+    if (buffer[0]!='c' || buffer[1]!='o' || buffer[2]!='n' || buffer[3]!='f' || buffer[4]!=' ' || buffer[5]!='p' || buffer[6]!='l' || buffer[7]!='s' || number_of_ones < 20) {
+        return 0;
+    }
+
     print_text("    - confirmation request received\n",GRAY,0,1);
     return 1;
 }

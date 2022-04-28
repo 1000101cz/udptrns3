@@ -62,6 +62,7 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
             }
 
             // create CRC and packet number sub_buffer
+            // TODO - include Packet number to CRC
             CRC_value = compute_CRC_buffer(&data_buffer, BUFFER_SIZE - SUB_BUFFER_SIZE);// compute CRC
             sprintf((char *) sub_buffer, "%d %ld", number_of_packets, CRC_value);
 
@@ -100,12 +101,13 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
             try_num++;
         }
 
-        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {server_missing_bools[i] = 0;}
-        int server_missing = 0;
+        for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {server_missing_bools[i] = 1;}
+        int server_missing = MAX_PACKETS_AT_TIME;
         for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
-            if (packet_buffer[i] == '0') {
-                server_missing++;
-                server_missing_bools[i] = 1;
+            if (packet_buffer[i] == '1') {
+                server_missing--;
+                server_missing_bools[i] = 0;
+            } else {
                 sprintf(string,"    ! server missing packet %d\n",i);
                 print_text(string,RED,0,1);
             }
