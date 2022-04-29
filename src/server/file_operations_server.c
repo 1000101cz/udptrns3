@@ -118,10 +118,6 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
             }
 
             // compute CRC
-            // TODO - include Packet number to CRC
-            // old
-            //crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
-            // new
             sprintf((char*)sub_buffer,"%d",packet_number);
             for (int k = BUFFER_SIZE-SUB_BUFFER_SIZE; k < BUFFER_SIZE-SUB_BUFFER_SIZE/2;k++) {
                 data_number_buffer[k] = sub_buffer[k-(BUFFER_SIZE-SUB_BUFFER_SIZE)];

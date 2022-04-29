@@ -66,11 +66,6 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
             }
 
             // create CRC and packet number sub_buffer
-            // TODO - include Packet number to CRC
-            // old
-            //CRC_value = compute_CRC_buffer(&data_buffer, BUFFER_SIZE - SUB_BUFFER_SIZE);// compute CRC
-            //sprintf((char *) sub_buffer, "%d %ld", number_of_packets, CRC_value);
-            // new
             sprintf((char*)sub_buffer,"%d",number_of_packets);
             for (int i = BUFFER_SIZE-SUB_BUFFER_SIZE; i < BUFFER_SIZE+SUB_BUFFER_SIZE/2; i++) {
                 data_number_buffer[i] = sub_buffer[i-(BUFFER_SIZE-SUB_BUFFER_SIZE)];
