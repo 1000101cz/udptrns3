@@ -71,7 +71,8 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
         print_text(string,BLUE,0,1);
         actual_min = cycle*MAX_PACKETS_AT_TIME+1;
         actual_max = (cycle+1)*MAX_PACKETS_AT_TIME;
-        printf("    - expecting packets in range <%d ; %d>\n",actual_min,actual_max);
+        sprintf(string,"    - expecting packets in range <%d ; %d>\n",actual_min,actual_max);
+        print_text(string,0,0,1);
         for (int i = 0; i < MAX_PACKETS_AT_TIME + 1; i++) {
             jump:
             for (int x = 0; x < BUFFER_SIZE; x++) { packet_buffer[x] = '\0'; }
@@ -127,7 +128,8 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
 
             // check CRC and file number
             if (crc_computed == crc_received) {
-                printf("    - received packet %d\n",packet_number);
+                sprintf(string,"    - received packet %d\n",packet_number);
+                print_text(string,0,0,1);
                 received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
                 if (packet_number > highest_received) {
                     highest_received = (int)packet_number;
@@ -262,8 +264,7 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
                             }
                             break;
                         } else {
-                            print_text("      ! crc do not match",RED,0,1);
-                            printf(" (computed: %ld vs received: %ld)\n",crc_computed,crc_received);
+                            print_text("      ! crc do not match\n",RED,0,1);
                             send_fail(socket_descriptor, client_address);
                         }
                     }

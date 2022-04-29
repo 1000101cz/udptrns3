@@ -77,11 +77,10 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
 
     // receive SHA256 hash
     unsigned char buffer[HASH_BUFFER_SIZE] = {'\0'};
-
+    print_text("  - receiving sha256 hash\n",0,0,1);
     while (1) {
-        print_text("  - receiving sha256 hash\n",0,0,1);
-        long lngth = recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
-        if (lngth < HASH_BUFFER_SIZE) {
+        long length = recvfrom(socket_descriptor, buffer, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len); // receive hash
+        if (length < HASH_BUFFER_SIZE) {
             continue;
         }
         _Bool hash_yes = 1;
