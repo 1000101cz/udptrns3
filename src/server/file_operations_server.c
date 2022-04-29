@@ -33,8 +33,10 @@ long separate_crc(const unsigned char *buffer) {
 
 // receive file from client
 void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in client_address, int len, long message_length) {
+    unsigned char sub_buffer[SUB_BUFFER_SIZE] = {'\0'};
     unsigned char data_buffer[BUFFER_SIZE-SUB_BUFFER_SIZE] = {'\0'};
     unsigned char packet_buffer[BUFFER_SIZE] = {'\0'};
+    unsigned char data_number_buffer[BUFFER_SIZE - SUB_BUFFER_SIZE/2] = {'\0'};
     unsigned char packet_buffer_confirmation[BUFFER_SIZE] = {'\0'};
     unsigned char mega_buffer[(BUFFER_SIZE - SUB_BUFFER_SIZE)*MAX_PACKETS_AT_TIME];
 
@@ -44,7 +46,7 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
 
     long counter = 0;
     long packet_counter = 0;
-    long crc_received, packet_number;
+    long crc_received;
     long total_error_count = 0;
     long packets_at_total = message_length/(BUFFER_SIZE-SUB_BUFFER_SIZE)+1;
 
@@ -56,6 +58,7 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
     int highest_received = -1;
     int actual_min;
     int actual_max;
+    int packet_number;
 
     int cycle = 0;
     int mega_buffer_number = 0;
@@ -71,11 +74,12 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
         actual_max = (cycle+1)*MAX_PACKETS_AT_TIME;
         printf("    - expecting packets in range <%d ; %d>\n",actual_min,actual_max);
 
+        // receive mega_buffer
         for (int i = 0; i < MAX_PACKETS_AT_TIME + 1; i++) {
 
-            for (int x = 0; x < BUFFER_SIZE; x++) {
-                packet_buffer[x] = '0';
-            }
+            for (int x = 0; x < BUFFER_SIZE; x++) { packet_buffer[x] = '\0'; }
+            for (int x = 0; x < SUB_BUFFER_SIZE; x++) { sub_buffer[x] = '\0'; }
+            for (int x = 0; x < BUFFER_SIZE-SUB_BUFFER_SIZE/2; x++) { data_number_buffer[x] = '\0'; }
 
             // receive packet with data number and CRC
             long length = recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
@@ -96,9 +100,7 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
             packet_counter++;
 
             // separate number
-            packet_number = separate_number(packet_buffer);
-            print_text("    - number separated\n",0,0,1);
-
+            packet_number = (int)separate_number(packet_buffer);
 
 
             if (packet_number < actual_min || packet_number > actual_max) {   // <
@@ -112,15 +114,23 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
             // separate data
             for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) {
                 data_buffer[j] = packet_buffer[j];
+                data_number_buffer[j] = data_buffer[j];  // new
             }
 
             // compute CRC
             // TODO - include Packet number to CRC
-            crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
+            // old
+            //crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
+            // new
+            sprintf((char*)sub_buffer,"%d",packet_number);
+            for (int k = BUFFER_SIZE-SUB_BUFFER_SIZE; k < BUFFER_SIZE-SUB_BUFFER_SIZE/2;k++) {
+                data_number_buffer[k] = sub_buffer[k-(BUFFER_SIZE-SUB_BUFFER_SIZE)];
+            }
+            crc_computed =  compute_CRC_buffer(&data_number_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE/2);
 
             // check CRC and file number
             if (crc_computed == crc_received) {
-                printf("    - received packet %ld\n",packet_number);
+                printf("    - received packet %d\n",packet_number);
                 received_packets[(packet_number-1)%MAX_PACKETS_AT_TIME] = 1;
                 if (packet_number > highest_received) {
                     highest_received = (int)packet_number;
@@ -183,17 +193,17 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
 
         int repaired_packets_num;
 
+        // receive missing packets
         if (!everything_ok) {
             repaired_packets_num = 0;
             sendto(socket_descriptor, packet_buffer_confirmation, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
             print_text("    - mega_buffer confirmation sent (missing some packets)\n",GRAY,0,1);
-
             print_text("\n    - receiving repair packets\n",BLUE,0,1);
             for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
                 if (!received_packets[i]) {
                     repaired_packets_num++;
                     while (1) {
-                        sprintf(string, "    - waiting for packet %d\n", i);
+                        sprintf(string, "    - waiting for packet %d\n", i+cycle*MAX_PACKETS_AT_TIME);
                         print_text(string, GRAY, 0,1);
 
                         recvfrom(socket_descriptor, packet_buffer, sizeof(unsigned char)*(BUFFER_SIZE),MSG_WAITALL, ( struct sockaddr *) &client_address,(unsigned int*)&len);
@@ -205,18 +215,30 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
                             sendto(socket_descriptor, packet_buffer_confirmation, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
                             continue;
                         }
-                        packet_number = separate_number(packet_buffer) - 1; // separate number
-                        sprintf(string,"    - received packet %ld\n",packet_number);
+                        packet_number = (int)separate_number(packet_buffer) - 1; // separate number
+                        sprintf(string,"    - received packet %d\n",packet_number);
                         print_text(string,0,0,1);
                         crc_received = separate_crc(packet_buffer); // separate CRC
+                        for (int x = 0; x < BUFFER_SIZE-SUB_BUFFER_SIZE/2; x++) { data_number_buffer[x] = '\0'; }
                         // separate data
-                        for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) { data_buffer[j] = packet_buffer[j]; }
+                        for (int j = 0; j < BUFFER_SIZE-SUB_BUFFER_SIZE; j++) {
+                            data_buffer[j] = packet_buffer[j];
+                            data_number_buffer[j] = data_buffer[j];
+                        }
 
-                        crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
+                        // old
+                        //crc_computed =  compute_CRC_buffer(&data_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE);
+                        // new
+                        for (int x = 0; x < SUB_BUFFER_SIZE; x++) { sub_buffer[x] = '\0'; }
+                        sprintf((char*)sub_buffer,"%d",packet_number+1);
+                        for (int x = BUFFER_SIZE-SUB_BUFFER_SIZE; x < BUFFER_SIZE+SUB_BUFFER_SIZE/2; x++) {
+                            data_number_buffer[x] = sub_buffer[x-(BUFFER_SIZE-SUB_BUFFER_SIZE)];
+                        }
+                        crc_computed =  compute_CRC_buffer(&data_number_buffer,BUFFER_SIZE-SUB_BUFFER_SIZE/2);
 
                         if (crc_received == crc_computed) {
                             received_packets[packet_number%MAX_PACKETS_AT_TIME] = 1;
-                            if (i == packet_number%MAX_PACKETS_AT_TIME) {
+                            if (i+cycle*MAX_PACKETS_AT_TIME == packet_number) {
                                 send_success(socket_descriptor, client_address);
                                 if (packet_number > highest_received) {
                                     highest_received = (int)packet_number;
@@ -243,6 +265,8 @@ void receive_file(char *file_dest, int socket_descriptor, struct sockaddr_in cli
                             }
                             break;
                         } else {
+                            print_text("    ! crc do not match",RED,0,1);
+                            printf(" (computed: %ld vs received: %ld)\n",crc_computed,crc_received);
                             send_fail(socket_descriptor, client_address);
                         }
                     }

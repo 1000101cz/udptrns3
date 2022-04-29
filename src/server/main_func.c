@@ -106,19 +106,25 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
 
 
     // compare received and computed hashes
-    _Bool fucked = 0;
+    int n_o_mistakes = 0;
     for (int i = 0; i < 65; i++) {
         if (hash[i] != buffer[i]) {
-            print_text("  - hashes do not match!\n",RED,0,0);
-            fucked = 1;
-            send_fail(socket_descriptor, client_address);
-            break;
+            n_o_mistakes++;
         }
     }
 
-    if (!fucked) {
+    // tolerance
+    if (n_o_mistakes > 5) {
+        print_text("  - hashes do not match!\n",RED,0,0);
+        send_fail(socket_descriptor, client_address);
+        return 1;
+    } else if (n_o_mistakes != 0) {
+        print_text("  + hashes are almost identical ( < 5 mistakes )\n",GREEN,0,0);
+    } else {
         print_text("  + hashes are identical\n",GREEN,0,0);
+    }
+    for (int i = 0; i < 5; i++) {
         send_success(socket_descriptor, client_address); // send Success if they match
     }
-    return fucked;
+    return 0;
 }

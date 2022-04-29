@@ -26,6 +26,7 @@ static void send_mega_buffer(const unsigned char *mega_buffer, int socket_descri
 void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct sockaddr_in server_address, int len) {
     unsigned char sub_buffer[SUB_BUFFER_SIZE] = {'\0'};
     unsigned char data_buffer[BUFFER_SIZE - SUB_BUFFER_SIZE] = {'\0'};
+    unsigned char data_number_buffer[BUFFER_SIZE - SUB_BUFFER_SIZE/2] = {'\0'};
     unsigned char packet_buffer[BUFFER_SIZE] = {'\0'};
     unsigned char mega_buffer[MAX_PACKETS_AT_TIME * BUFFER_SIZE] = {'\0'};
 
@@ -54,17 +55,29 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
         for (int packet_n = 0; packet_n < MAX_PACKETS_AT_TIME; packet_n++) {
             // clear buffer
             for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) { data_buffer[i] = '\0'; }
+            for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE/2; i++) { data_number_buffer[i] = '\0'; }
+            for (int i = 0; i < SUB_BUFFER_SIZE; i++) { sub_buffer[i] = '\0'; }
 
             // fill buffer
             for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE && pointer < n_o_char; i++) {
                 data_buffer[i] = getc(read_file);
+                data_number_buffer[i] = data_buffer[i];  // new
                 pointer++;
             }
 
             // create CRC and packet number sub_buffer
             // TODO - include Packet number to CRC
-            CRC_value = compute_CRC_buffer(&data_buffer, BUFFER_SIZE - SUB_BUFFER_SIZE);// compute CRC
+            // old
+            //CRC_value = compute_CRC_buffer(&data_buffer, BUFFER_SIZE - SUB_BUFFER_SIZE);// compute CRC
+            //sprintf((char *) sub_buffer, "%d %ld", number_of_packets, CRC_value);
+            // new
+            sprintf((char*)sub_buffer,"%d",number_of_packets);
+            for (int i = BUFFER_SIZE-SUB_BUFFER_SIZE; i < BUFFER_SIZE+SUB_BUFFER_SIZE/2; i++) {
+                data_number_buffer[i] = sub_buffer[i-(BUFFER_SIZE-SUB_BUFFER_SIZE)];
+            }
+            CRC_value = compute_CRC_buffer(&data_number_buffer, BUFFER_SIZE-SUB_BUFFER_SIZE/2);
             sprintf((char *) sub_buffer, "%d %ld", number_of_packets, CRC_value);
+            //
 
             // connect buffers (data + CRC)
             for (int i = 0; i < BUFFER_SIZE - SUB_BUFFER_SIZE; i++) {
@@ -108,7 +121,7 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
                 server_missing--;
                 server_missing_bools[i] = 0;
             } else {
-                sprintf(string,"    ! server missing packet %d\n",i);
+                sprintf(string,"    ! server missing packet %d\n",i+(mega_buffer_number-1)*MAX_PACKETS_AT_TIME);
                 print_text(string,RED,0,1);
             }
         }
@@ -117,6 +130,7 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
             total_error_count = total_error_count + server_missing;
             sprintf((char *) string, "    ! server is missing %d packets from last mega_buffer\n", server_missing);
             print_text(string, RED, 0,1);
+            print_text("\n    - sending repair packets\n",BLUE,0,1);
         } else {
             print_text("    - server confirmed all packets from last mega_buffer\n",GRAY,0,1);
         }
@@ -128,7 +142,7 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
                     for (int j = 0; j < BUFFER_SIZE; j++) {
                         packet_buffer[j] = mega_buffer[j + BUFFER_SIZE * i];
                     }
-                    sprintf((char *) string, "    - sending packet %d\n", i);
+                    sprintf((char *) string, "    - sending packet %d\n", i+(mega_buffer_number-1)*MAX_PACKETS_AT_TIME);
                     print_text(string, GRAY, 0,1);
 
 #ifdef NETDERPER
