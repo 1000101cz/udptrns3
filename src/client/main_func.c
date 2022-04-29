@@ -46,8 +46,10 @@ _Bool termination_f(char *file_address, int socket_descriptor, struct sockaddr_i
     print_text(string,0,0,0);
 
     // send SHA256 hash
-    print_text("  - sending sha256 hash\n",0,0,1);
-    sendto(socket_descriptor, hash, sizeof(unsigned char)*HASH_BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address)); // send file hash to server
+    for (int i = 0; i < 5; i++) {
+        print_text("  - sending sha256 hash\n", 0, 0, 1);
+        sendto(socket_descriptor, hash, sizeof(unsigned char) * HASH_BUFFER_SIZE, MSG_CONFIRM,(const struct sockaddr *) &server_address, sizeof(server_address)); // send file hash to server
+    }
 
     // wait for SHA256 hash confirmation
     if (get_conf(socket_descriptor, server_address, len, 1)) {

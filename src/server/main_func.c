@@ -88,9 +88,6 @@ _Bool termination_f(char *file_dest, int socket_descriptor, struct sockaddr_in c
         for (int i = 0; i < HASH_BUFFER_SIZE-1; i++) {
             int character_value = buffer[i];
             if (character_value < 48 || (character_value>57 && character_value<97) || character_value > 122) { // check if string is hash
-                sprintf(string1,"  - received: %s\n",buffer);
-                print_text(string1,0,0,1);
-                print_text("  ! not hash\n",RED,0,1);
                 hash_yes = 0;
                 send_success(socket_descriptor, client_address);
                 break;
