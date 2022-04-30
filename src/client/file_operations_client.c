@@ -8,15 +8,14 @@ static void send_mega_buffer(const unsigned char *mega_buffer, int socket_descri
         }
 
         // send buffer with data, CRC and packet number
-#ifdef NETDERPER
-        server_address.sin_port = htons(PORT_NETDERPER_1);
-#endif
+        server_address = set_port(server_address, PORT_NETDERPER_1, 0);
+
         sendto(socket_descriptor, packet_buffer, sizeof(unsigned char) * (BUFFER_SIZE), MSG_CONFIRM,(const struct sockaddr *) &server_address, sizeof(server_address));
         if (last_packet_sent && ((i+1)==packets_at_total%MAX_PACKETS_AT_TIME)) {
             break;
         }
     }
-    print_text("    - mega_buffer sent\n",GRAY,0,1);
+    print_text("  - mega_buffer sent\n",GRAY,0,1);
 
     // send confirmation request
     confirmation_request(socket_descriptor,server_address);
@@ -101,7 +100,7 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
         int try_num = 0;
         while (delta == -1) {
             if (try_num > MAX_SENT_REPEAT) {
-                print_text("    ! MAX_SENT_REPEAT reached\n",RED,0,0);
+                print_text("  ! MAX_SENT_REPEAT reached\n",RED,0,0);
                 exit(100);
             }
             confirmation_request(socket_descriptor,server_address);
@@ -116,18 +115,18 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
                 server_missing--;
                 server_missing_bools[i] = 0;
             } else {
-                sprintf(string,"    ! server missing packet %d\n",i+(mega_buffer_number-1)*MAX_PACKETS_AT_TIME);
+                sprintf(string,"  ! server missing packet %d\n",i+(mega_buffer_number-1)*MAX_PACKETS_AT_TIME);
                 print_text(string,RED,0,1);
             }
         }
 
         if (server_missing > 0) {
             total_error_count = total_error_count + server_missing;
-            sprintf((char *) string, "    ! server is missing %d packets from last mega_buffer\n", server_missing);
+            sprintf((char *) string, "  ! server is missing %d packets from last mega_buffer\n", server_missing);
             print_text(string, RED, 0,1);
-            print_text("\n    - sending repair packets\n",BLUE,0,1);
+            print_text("\n  - sending repair packets\n",BLUE,0,1);
         } else {
-            print_text("    - server confirmed all packets from last mega_buffer\n",GRAY,0,1);
+            print_text("  - server confirmed all packets from last mega_buffer\n",GRAY,0,1);
         }
 
         for (int i = 0; i < MAX_PACKETS_AT_TIME; i++) {
@@ -137,12 +136,11 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
                     for (int j = 0; j < BUFFER_SIZE; j++) {
                         packet_buffer[j] = mega_buffer[j + BUFFER_SIZE * i];
                     }
-                    sprintf((char *) string, "    - sending packet %d\n", i+(mega_buffer_number-1)*MAX_PACKETS_AT_TIME);
+                    sprintf((char *) string, "  - sending packet %d\n", i+(mega_buffer_number-1)*MAX_PACKETS_AT_TIME);
                     print_text(string, GRAY, 0,1);
 
-#ifdef NETDERPER
-                    server_address.sin_port = htons(PORT_NETDERPER_1);
-#endif
+                    server_address = set_port(server_address, PORT_NETDERPER_1, 0);
+
                     sendto(socket_descriptor, packet_buffer, sizeof(unsigned char) * (BUFFER_SIZE), MSG_CONFIRM,(const struct sockaddr *) &server_address, sizeof(server_address));
                     if (get_conf(socket_descriptor, server_address, len, 0)) {
                         break;
@@ -155,8 +153,13 @@ void send_file(char *file_dest, long n_o_char, int socket_descriptor, struct soc
         print_text(string, BLUE, 0,1);
     }
 
-    printf("  - data packets sent: %d \n",number_of_packets);
-    printf("  - total number of corrupted packets: %ld\n", total_error_count);
+    print_text("\n  + all data sent\n",GREEN,0,0);
+
+    sprintf(string,"\n  - data packets sent: %d \n",number_of_packets);
+    print_text(string,0,0,0);
+
+    sprintf(string,"  - total number of corrupted packets: %ld\n", total_error_count);
+    print_text(string,0,0,0);
 
     fclose(read_file);
 }

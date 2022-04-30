@@ -30,6 +30,10 @@
 
 #define MAX_PACKETS_AT_TIME 50
 
+// set_port
+//   * reset port to netderper value
+struct sockaddr_in set_port(struct sockaddr_in address, int port, _Bool wait);
+
 // send_success
 //   * send short success message
 void send_success(int socket_descriptor, struct sockaddr_in client_address);

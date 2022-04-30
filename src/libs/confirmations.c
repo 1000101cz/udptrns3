@@ -1,23 +1,33 @@
 #include "confirmations.h"
 
+struct sockaddr_in set_port(struct sockaddr_in address, int port, _Bool wait) {
+#ifdef NETDERPER
+    if (wait) {
+        usleep(120000); // conf request must be last message
+    }
+    address.sin_port = htons(port);
+#endif
+    return address;
+}
+
 void send_success(int socket_descriptor, struct sockaddr_in client_address) {
     unsigned char buffer[5];
     for (int i = 0; i < 5; i++) { buffer[i] = '1'; }
-#ifdef NETDERPER
-    client_address.sin_port = htons(PORT_NETDERPER_2);
-#endif
+
+    client_address = set_port(client_address,PORT_NETDERPER_2, 0);
+
     sendto(socket_descriptor, buffer, sizeof(unsigned char)*5,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
-    print_text("    - SUCCESS confirmation sent\n",GRAY,0,1);
+    print_text("  - SUCCESS confirmation sent\n",GRAY,0,1);
 }
 
 void send_fail(int socket_descriptor, struct sockaddr_in client_address) {
     unsigned char buffer[5];
     for (int i = 0; i < 5; i++) { buffer[i] = '0'; }
-#ifdef NETDERPER
-    client_address.sin_port = htons(PORT_NETDERPER_2);
-#endif
+
+    client_address = set_port(client_address, PORT_NETDERPER_2, 0);
+
     sendto(socket_descriptor, buffer, sizeof(unsigned char)*5,MSG_CONFIRM, (const struct sockaddr *) &client_address,sizeof(client_address));
-    print_text("    - FAIL confirmation sent\n",GRAY,0,1);
+    print_text("  - FAIL confirmation sent\n",GRAY,0,1);
 }
 
 // receive confirmation that operation succeeded
@@ -47,13 +57,13 @@ _Bool get_conf(int socket_descriptor, struct sockaddr_in server_address, int len
         }
     }
     if (n_o_0 >= 3) {
-        print_text("    - received FAIL confirmation\n",GRAY,0,1);
+        print_text("  - received FAIL confirmation\n",GRAY,0,1);
         return 0;
     } else if (n_o_1 >= 3) {
-        print_text("    - received SUCCESS confirmation\n",GRAY,0,1);
+        print_text("  - received SUCCESS confirmation\n",GRAY,0,1);
         return 1;
     } else {
-        print_text("    ! did not receive confirmation (handle as FAIL)\n",RED,0,1);
+        print_text("  ! did not receive confirmation (handle as FAIL)\n",RED,0,1);
         return 0;
     }
 }
@@ -70,12 +80,11 @@ void confirmation_request(int socket_descriptor, struct sockaddr_in server_addre
     buffer[6] = 'l';
     buffer[7] = 's';
     for (int i = 8; i < BUFFER_SIZE; i++) { buffer[i] = '1'; }
-    usleep(120000); // conf pls must be last message
-#ifdef NETDERPER
-    server_address.sin_port = htons(PORT_NETDERPER_1);
-#endif
+
+    set_port(server_address, PORT_NETDERPER_1, 1);
+
     sendto(socket_descriptor, buffer, sizeof(unsigned char)*BUFFER_SIZE,MSG_CONFIRM, (const struct sockaddr *) &server_address,sizeof(server_address));
-    print_text("    - confirmation request sent\n",GRAY,0,1);
+    print_text("  - confirmation request sent\n",GRAY,0,1);
 }
 
 // check is packet is confirmation request - server app
@@ -92,6 +101,6 @@ _Bool packet_is_request(const unsigned char *buffer) {
         return 0;
     }
 
-    print_text("    - confirmation request received\n",GRAY,0,1);
+    print_text("  - confirmation request received\n",GRAY,0,1);
     return 1;
 }

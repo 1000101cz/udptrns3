@@ -2,6 +2,7 @@
 
 #include "main_func.h"
 
+
 // initialize communication with client
 long init_handshake(int socket_descriptor, struct sockaddr_in client_address, int len) {
     unsigned char init_buffer[BUFFER_SIZE] = {'\0'};
@@ -14,9 +15,7 @@ long init_handshake(int socket_descriptor, struct sockaddr_in client_address, in
     int try_number = 0;
     while (1) {
         recvfrom(socket_descriptor, init_buffer, sizeof(unsigned char) * 25, MSG_WAITALL,(struct sockaddr *) &client_address, (unsigned int *) &len);
-#ifdef NETDERPER
-        client_address.sin_port = htons(PORT_NETDERPER_2);
-#endif
+        client_address = set_port(client_address, PORT_NETDERPER_2, 0);
         buf_2_position = 0;
         for (int i = 0; i < 12; i++) {
             if (init_buffer[i] != ' ') {
